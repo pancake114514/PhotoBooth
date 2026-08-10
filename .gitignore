@@ -1,0 +1,18 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+
+# IDE
+.idea/
+
+# Reasonix 本地会话/任务状态
+.reasonix/
+
+# SQLite / 本地数据
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
