@@ -103,6 +103,23 @@ const PHOTO_COLUMNS = `id, folder_id AS folderId, path, filename, size, mtime, w
   exposure, focal_length AS focalLength, gps_lat AS gpsLat, gps_lng AS gpsLng,
   gps_alt AS gpsAlt, rating, favorite`
 
+/** LIKE 通配符转义 */
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (m) => '\\' + m)
+}
+
+/** 追加搜索条件（文件名/路径模糊匹配） */
+function pushSearchClause(
+  where: string[],
+  params: Array<string | number>,
+  search?: string
+): void {
+  if (!search || !search.trim()) return
+  const like = `%${escapeLike(search.trim())}%`
+  where.push(`(filename LIKE ? ESCAPE '\\' OR path LIKE ? ESCAPE '\\')`)
+  params.push(like, like)
+}
+
 export function listPhotos(
   folderId: number,
   offset: number,
@@ -117,6 +134,7 @@ export function listPhotos(
     where.push('rating >= ?')
     params.push(opts.minRating ?? 1)
   }
+  pushSearchClause(where, params, opts.search)
   const orderMap: Record<SortBy, string> = {
     taken_desc: 'taken_at DESC, id DESC',
     taken_asc: 'taken_at ASC, id ASC',
@@ -154,6 +172,7 @@ export function listGpsPhotos(folderId: number, opts: PhotoListOptions = {}): Gp
     where.push('rating >= ?')
     params.push(opts.minRating ?? 1)
   }
+  pushSearchClause(where, params, opts.search)
   const photos = db
     .prepare(`SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${where.join(' AND ')}`)
     .all(...params) as Photo[]
@@ -219,6 +238,18 @@ export function upsertPhoto(p: PhotoRecord): void {
 export function scanBegin(folderId: number): void {
   db.exec('CREATE TEMP TABLE IF NOT EXISTS tmp_scan (folder_id INTEGER, path TEXT)')
   db.prepare('DELETE FROM tmp_scan WHERE folder_id = ?').run(folderId)
+}
+
+/** 获取该文件夹现有记录（path → mtime/size），供增量扫描跳过未变化的文件 */
+export function getExistingRecords(folderId: number): Map<string, { mtime: number; size: number }> {
+  const rows = db
+    .prepare('SELECT path, mtime, size FROM photos WHERE folder_id = ?')
+    .all(folderId) as Array<{ path: string; mtime: number | null; size: number | null }>
+  const map = new Map<string, { mtime: number; size: number }>()
+  for (const r of rows) {
+    map.set(r.path, { mtime: r.mtime ?? 0, size: r.size ?? 0 })
+  }
+  return map
 }
 
 export function scanMark(folderId: number, path: string): void {

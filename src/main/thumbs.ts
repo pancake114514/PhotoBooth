@@ -1,7 +1,9 @@
 import { createHash } from 'crypto'
-import { join } from 'path'
+import { extname, join } from 'path'
 import { mkdirSync } from 'fs'
+import { readFile } from 'fs/promises'
 import sharp from 'sharp'
+import heicDecode from 'heic-decode'
 
 let thumbsDir = ''
 
@@ -32,6 +34,11 @@ const THUMB_SIZE = 512
 export async function generateThumb(filePath: string): Promise<ThumbResult> {
   const thumbPath = thumbFileName(filePath)
   try {
+    const ext = extname(filePath).toLowerCase()
+    // HEIC/HEIF：sharp（libvips）不带 libheif，用 libheif wasm 解码后交给 sharp 压缩
+    if (ext === '.heic' || ext === '.heif') {
+      return await generateThumbHeic(filePath, thumbPath)
+    }
     const img = sharp(filePath, { failOn: 'none', limitInputPixels: 268_435_456 }).rotate()
     const meta = await img.metadata()
     await img
@@ -40,6 +47,23 @@ export async function generateThumb(filePath: string): Promise<ThumbResult> {
       .toFile(join(thumbsDir, thumbPath))
     return { thumbPath, width: meta.width ?? null, height: meta.height ?? null }
   } catch {
+    return { thumbPath: null, width: null, height: null }
+  }
+}
+
+async function generateThumbHeic(filePath: string, thumbPath: string): Promise<ThumbResult> {
+  try {
+    const buffer = await readFile(filePath)
+    const decoded = await heicDecode({ buffer })
+    await sharp(decoded.data, {
+      raw: { width: decoded.width, height: decoded.height, channels: 4 }
+    })
+      .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 82 })
+      .toFile(join(thumbsDir, thumbPath))
+    return { thumbPath, width: decoded.width, height: decoded.height }
+  } catch (e) {
+    console.error('[thumbs:heic]', filePath, e)
     return { thumbPath: null, width: null, height: null }
   }
 }

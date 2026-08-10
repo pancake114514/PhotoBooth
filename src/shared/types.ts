@@ -53,6 +53,8 @@ export interface PhotoListOptions {
   filter?: PhotoFilter
   minRating?: number
   sortBy?: SortBy
+  /** 文件名/路径关键字搜索 */
+  search?: string
 }
 
 export interface PhotoPage {

@@ -48,6 +48,14 @@ function App(): React.JSX.Element {
   const [lightbox, setLightbox] = useState<LightboxState | null>(null)
   const [filterId, setFilterId] = useState('all')
   const [sortBy, setSortBy] = useState<SortBy>('taken_desc')
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+
+  // 搜索防抖：停止输入 300ms 后生效
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const loadSeq = useRef(0) // 请求序号，防止快速切换时的竞态
   const activeIdRef = useRef<number | null>(null)
@@ -61,8 +69,8 @@ function App(): React.JSX.Element {
 
   const opts = useMemo<PhotoListOptions>(() => {
     const f = FILTERS.find((x) => x.id === filterId) ?? FILTERS[0]
-    return { filter: f.filter, minRating: f.minRating, sortBy }
-  }, [filterId, sortBy])
+    return { filter: f.filter, minRating: f.minRating, sortBy, search: search || undefined }
+  }, [filterId, sortBy, search])
   const optsRef = useRef(opts)
   optsRef.current = opts
 
@@ -101,7 +109,7 @@ function App(): React.JSX.Element {
     setGpsTotal(res.total)
   }, [])
 
-  // 切换文件夹 / 过滤 / 排序 → 重新加载
+  // 切换文件夹 / 过滤 / 排序 / 搜索 → 重新加载
   useEffect(() => {
     if (activeId == null) return
     if (viewRef.current === 'map') {
@@ -111,7 +119,7 @@ function App(): React.JSX.Element {
       setTotal(0)
       void loadPage(activeId, 0, false)
     }
-  }, [activeId, filterId, sortBy, loadPage, loadGps])
+  }, [activeId, filterId, sortBy, search, loadPage, loadGps])
 
   // 订阅扫描进度
   useEffect(() => {
@@ -235,6 +243,13 @@ function App(): React.JSX.Element {
                 地图
               </button>
             </div>
+            <input
+              className="btn search-input"
+              type="text"
+              placeholder="搜索文件名…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
             <select
               className="btn select"
               value={filterId}

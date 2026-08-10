@@ -3,7 +3,7 @@ import { readdir, stat } from 'fs/promises'
 import { BrowserWindow } from 'electron'
 import { parseExif } from './exif'
 import { generateThumb } from './thumbs'
-import { scanBegin, scanEnd, scanMark, upsertPhoto } from './db'
+import { getExistingRecords, scanBegin, scanEnd, scanMark, upsertPhoto } from './db'
 import type { ScanProgress } from '../shared/types'
 
 const IMAGE_EXTS = new Set([
@@ -77,34 +77,45 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
     scanBegin(folderId)
     sendProgress({ folderId, phase: 'processing', done: 0, total })
 
+    // 增量扫描：已存在且 mtime/size 未变化的文件跳过 EXIF/缩略图处理
+    const existing = getExistingRecords(folderId)
+    let skipped = 0
+
     await mapLimit(files, 4, async (filePath) => {
       try {
         const st = await stat(filePath)
-        const exif = await parseExif(filePath)
-        const { thumbPath, width, height } = await generateThumb(filePath)
-        upsertPhoto({
-          folderId,
-          path: filePath,
-          filename: basename(filePath),
-          size: st.size,
-          mtime: Math.floor(st.mtimeMs),
-          width,
-          height,
-          format: extname(filePath).slice(1).toLowerCase(),
-          thumbPath,
-          takenAt: exif.takenAt,
-          make: exif.make,
-          model: exif.model,
-          lens: exif.lens,
-          fnumber: exif.fnumber,
-          iso: exif.iso,
-          exposure: exif.exposure,
-          focalLength: exif.focalLength,
-          gpsLat: exif.gpsLat,
-          gpsLng: exif.gpsLng,
-          gpsAlt: exif.gpsAlt
-        })
-        scanMark(folderId, filePath)
+        const mtime = Math.floor(st.mtimeMs)
+        const prev = existing.get(filePath)
+        if (prev && prev.mtime === mtime && prev.size === st.size) {
+          skipped++
+          scanMark(folderId, filePath) // 保持记录存在，不重新解析
+        } else {
+          const exif = await parseExif(filePath)
+          const { thumbPath, width, height } = await generateThumb(filePath)
+          upsertPhoto({
+            folderId,
+            path: filePath,
+            filename: basename(filePath),
+            size: st.size,
+            mtime,
+            width,
+            height,
+            format: extname(filePath).slice(1).toLowerCase(),
+            thumbPath,
+            takenAt: exif.takenAt,
+            make: exif.make,
+            model: exif.model,
+            lens: exif.lens,
+            fnumber: exif.fnumber,
+            iso: exif.iso,
+            exposure: exif.exposure,
+            focalLength: exif.focalLength,
+            gpsLat: exif.gpsLat,
+            gpsLng: exif.gpsLng,
+            gpsAlt: exif.gpsAlt
+          })
+          scanMark(folderId, filePath)
+        }
       } catch {
         // 单文件失败（扫描中被移动/删除等）：跳过
       }
@@ -115,7 +126,13 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
     })
 
     scanEnd(folderId)
-    sendProgress({ folderId, phase: 'done', done: total, total })
+    sendProgress({
+      folderId,
+      phase: 'done',
+      done: total,
+      total,
+      message: skipped > 0 ? `跳过 ${skipped} 张未变化的照片` : undefined
+    })
   } catch (e) {
     sendProgress({ folderId, phase: 'error', done, total: done, message: String(e) })
   } finally {
