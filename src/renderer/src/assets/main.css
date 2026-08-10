@@ -560,14 +560,16 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 500;
-  background: var(--ev-c-black-mute);
-  border: 1px solid var(--ev-c-gray-3);
-  color: var(--ev-c-text-2);
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #333;
   font-size: 12px;
   padding: 6px 14px;
   border-radius: 999px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 底图切换（右下角） */
@@ -577,17 +579,19 @@
   bottom: 32px;
   z-index: 500;
   display: inline-flex;
-  border: 1px solid var(--ev-c-gray-3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 7px;
   overflow: hidden;
-  background: var(--ev-c-black-mute);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .basemap-switch button {
   border: none;
   background: transparent;
-  color: var(--ev-c-text-2);
+  color: #555;
   font-size: 11px;
   padding: 5px 10px;
   cursor: pointer;
@@ -597,16 +601,17 @@
 }
 
 .basemap-switch button + button {
-  border-left: 1px solid var(--ev-c-gray-3);
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .basemap-switch button:hover {
-  color: var(--ev-c-text-1);
+  background: rgba(255, 255, 255, 0.12);
+  color: #111;
 }
 
 .basemap-switch button.on {
-  background: var(--ev-c-gray-2);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.4);
+  color: #111;
 }
 
 /* 照片 marker：圆形缩略图 */
@@ -627,16 +632,36 @@
 }
 
 /* Leaflet 控件暗色适配 */
-/* Leaflet 缩放控件：半透明白色背景 + 加深符号 */
-.leaflet-control-zoom a {
+/* Leaflet 缩放控件：胶囊样式 + 半透明白色毛玻璃 */
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
   background: rgba(255, 255, 255, 0.16) !important;
-  color: #333 !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.leaflet-control-zoom a {
+  background: transparent !important;
+  color: #555 !important;
+  border: none !important;
+  border-bottom: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   color: #111 !important;
+}
+
+.leaflet-control-zoom-in {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35) !important;
 }
 
 .leaflet-control-attribution {
