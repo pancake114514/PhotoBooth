@@ -114,17 +114,17 @@ function App(): React.JSX.Element {
     setGpsTotal(res.total)
   }, [])
 
-  // 切换文件夹 / 过滤 / 排序 / 搜索 → 重新加载
+  // 切换文件夹 / 过滤 / 排序 / 搜索 / 视图 → 重新加载
   useEffect(() => {
     if (activeId == null) return
-    if (viewRef.current === 'map') {
+    if (view === 'map') {
       void loadGps(activeId)
     } else {
       setPhotos([])
       setTotal(0)
       void loadPage(activeId, 0, false)
     }
-  }, [activeId, filterId, sortBy, search, loadPage, loadGps])
+  }, [activeId, filterId, sortBy, search, view, loadPage, loadGps])
 
   // 订阅扫描进度
   useEffect(() => {
