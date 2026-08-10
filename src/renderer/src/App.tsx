@@ -72,7 +72,9 @@ function App(): React.JSX.Element {
     return { filter: f.filter, minRating: f.minRating, sortBy, search: search || undefined }
   }, [filterId, sortBy, search])
   const optsRef = useRef(opts)
-  optsRef.current = opts
+  useEffect(() => {
+    optsRef.current = opts
+  }, [opts])
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.folders.list()
@@ -82,9 +84,12 @@ function App(): React.JSX.Element {
     )
   }, [])
 
-  // 初始加载
+  // 初始加载：微任务排程，避免 effect 内同步 setState
   useEffect(() => {
-    void refreshFolders()
+    const id = setTimeout(() => {
+      void refreshFolders()
+    }, 0)
+    return () => clearTimeout(id)
   }, [refreshFolders])
 
   const loadPage = useCallback(
@@ -265,21 +270,20 @@ function App(): React.JSX.Element {
                 </option>
               ))}
             </select>
-            {view === 'grid' && (
-              <select
-                className="btn select"
-                value={sortBy}
-                onChange={(e) => {
-                  setLightbox(null)
-                  setSortBy(e.target.value as SortBy)
-                }}
-                title="排序"
-              >
-                <option value="taken_desc">最新优先</option>
-                <option value="taken_asc">最旧优先</option>
-                <option value="filename">按文件名</option>
-              </select>
-            )}
+            <select
+              className="btn select"
+              value={sortBy}
+              disabled={view !== 'grid'}
+              onChange={(e) => {
+                setLightbox(null)
+                setSortBy(e.target.value as SortBy)
+              }}
+              title={view === 'grid' ? '排序' : '排序仅对照片网格生效'}
+            >
+              <option value="taken_desc">最新优先</option>
+              <option value="taken_asc">最旧优先</option>
+              <option value="filename">按文件名</option>
+            </select>
           </div>
           <div className="toolbar-info">
             {isScanning && activeScan && (

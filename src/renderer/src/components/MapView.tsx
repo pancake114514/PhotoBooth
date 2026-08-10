@@ -81,7 +81,9 @@ function ClusterLayer({
 }): React.JSX.Element | null {
   const map = useMap()
   const onOpenRef = useRef(onOpenPhoto)
-  onOpenRef.current = onOpenPhoto
+  useEffect(() => {
+    onOpenRef.current = onOpenPhoto
+  }, [onOpenPhoto])
 
   useEffect(() => {
     if (photos.length === 0) return

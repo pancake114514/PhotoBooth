@@ -4,7 +4,7 @@
  */
 const PI = Math.PI
 const A = 6378245.0
-const EE = 0.00669342162296594323
+const EE = 0.006693421622965943
 
 function outOfChina(lng: number, lat: number): boolean {
   return lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271

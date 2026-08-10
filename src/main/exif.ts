@@ -70,8 +70,8 @@ function toDate(v: unknown): number | null {
     return Number.isNaN(d.getTime()) ? null : d.getTime()
   }
   if (typeof v === 'string') {
-    // "2024:01:01 10:00:00" → "2024/01/01 10:00:00"
-    const t = Date.parse(v.replace(/:(\d{2}) /, '/$1 '))
+    // "2024:01:01 10:00:00" → "2024/01/01 10:00:00"（整段日期一并处理）
+    const t = Date.parse(v.replace(/(\d{4}):(\d{2}):(\d{2}) /, '$1/$2/$3 '))
     return Number.isNaN(t) ? null : t
   }
   return null

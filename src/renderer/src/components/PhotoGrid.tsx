@@ -31,7 +31,7 @@ function PhotoGrid({ photos, total, loading, onLoadMore, onOpen }: Props): React
       <div className="empty">
         <p>{total === 0 ? '暂无照片' : '已全部加载'}</p>
         {total === 0 && (
-          <p className="empty-hint">点击右上角"重新扫描"，或先添加包含照片的文件夹</p>
+          <p className="empty-hint">点击右上角&ldquo;重新扫描&rdquo;，或先添加包含照片的文件夹</p>
         )}
       </div>
     )
