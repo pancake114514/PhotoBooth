@@ -220,6 +220,9 @@
   padding: 16px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* 必须显式指定行高：aspect-ratio 推算的高度不参与 auto 行轨道计算，
+     若缺省行高塌陷为 0，大量缩略图会按 gap 间距叠在一起 */
+  grid-auto-rows: 160px;
   gap: 12px;
   align-content: start;
 }
