@@ -347,7 +347,9 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.92);
   display: flex;
-  z-index: 100;
+  /* 必须高于 Leaflet 地图元素（控件 800、leaflet-top/bottom 1000），
+     否则从地图打开大图时会被地图遮挡 */
+  z-index: 9999;
 }
 
 .lightbox-stage {
