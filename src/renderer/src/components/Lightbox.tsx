@@ -6,6 +6,10 @@ import RatingStars from './RatingStars'
 interface Props {
   photos: Photo[]
   index: number
+  /** 当前数据源的照片总数（网格分页场景下大于已加载 photos.length 时仍可继续加载） */
+  total: number
+  /** 翻到已加载末尾时触发加载更多（地图等全量数据场景不传） */
+  onLoadMore?: () => void
   onClose: () => void
   onNavigate: (index: number) => void
   onSetRating: (photo: Photo, rating: number) => void
@@ -15,6 +19,8 @@ interface Props {
 function Lightbox({
   photos,
   index,
+  total,
+  onLoadMore,
   onClose,
   onNavigate,
   onSetRating,
@@ -28,8 +34,15 @@ function Lightbox({
   }, [index, onNavigate])
 
   const next = useCallback(() => {
-    if (index < photos.length - 1) onNavigate(index + 1)
-  }, [index, photos.length, onNavigate])
+    if (index < photos.length - 1) {
+      onNavigate(index + 1)
+    } else if (onLoadMore) {
+      onLoadMore() // 已到已加载末尾：请求下一页，加载后继续可翻
+    }
+  }, [index, photos.length, onNavigate, onLoadMore])
+
+  // 末尾且没有更多可加载 → 禁用下一张
+  const noMoreNext = index >= photos.length - 1 && (!onLoadMore || photos.length >= total)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -72,6 +85,7 @@ function Lightbox({
         <button
           className="lb-nav lb-prev"
           title="上一张 (←)"
+          disabled={index <= 0}
           onClick={(e) => {
             e.stopPropagation()
             prev()
@@ -81,7 +95,8 @@ function Lightbox({
         </button>
         <button
           className="lb-nav lb-next"
-          title="下一张 (→)"
+          title={noMoreNext ? '已是最后一张' : '下一张 (→)'}
+          disabled={noMoreNext}
           onClick={(e) => {
             e.stopPropagation()
             next()

@@ -572,6 +572,12 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.lb-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+  background: transparent;
+}
+
 .lb-prev {
   left: 12px;
 }
