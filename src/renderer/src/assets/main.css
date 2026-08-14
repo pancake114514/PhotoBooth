@@ -7,6 +7,7 @@
 
 /* ============ 侧边栏（多文件夹） ============ */
 .sidebar {
+  position: relative;
   width: 240px;
   flex-shrink: 0;
   display: flex;
@@ -25,6 +26,47 @@
 .sidebar-title {
   font-size: 15px;
   font-weight: 600;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 右侧拖动分隔条：拖动调整宽度，拖到很窄松手即收起 */
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.sidebar-resizer:hover {
+  background: var(--ev-c-gray-1);
+}
+
+/* 收起状态：缩成窄条，图标垂直居中，点击整条展开 */
+.sidebar-collapsed {
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sidebar-collapsed:hover {
+  background: var(--ev-c-gray-3);
+}
+
+.sidebar-collapsed .sidebar-toggle-icon {
+  font-size: 18px;
+  color: var(--ev-c-text-2);
+  line-height: 1;
+  user-select: none;
 }
 
 .folder-list {
