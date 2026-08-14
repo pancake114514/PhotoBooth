@@ -81,6 +81,8 @@ function ClusterLayer({
 }): React.JSX.Element | null {
   const map = useMap()
   const onOpenRef = useRef(onOpenPhoto)
+  // 记录上次 fitBounds 对应的照片集合，用于区分「照片变化」与「仅切换底图」
+  const fittedPhotosRef = useRef<Photo[] | null>(null)
   useEffect(() => {
     onOpenRef.current = onOpenPhoto
   }, [onOpenPhoto])
@@ -111,8 +113,13 @@ function ClusterLayer({
     }
 
     map.addLayer(layer)
-    const bounds = L.latLngBounds(coords)
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 })
+
+    // 仅在照片集合变化时自适应视野；切换底图（basemap）只重建 marker，
+    // 保持当前的缩放比例与中心位置
+    if (fittedPhotosRef.current !== photos) {
+      fittedPhotosRef.current = photos
+      map.fitBounds(L.latLngBounds(coords), { padding: [48, 48], maxZoom: 15 })
+    }
 
     return () => {
       map.removeLayer(layer)
