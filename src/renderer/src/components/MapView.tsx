@@ -23,7 +23,7 @@ const BASEMAPS: BasemapDef[] = [
     id: 'arcgis',
     name: 'ArcGIS',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    subdomains: 'abc', // URL 无 {s}，但避免 undefined 传入 Leaflet
+    subdomains: 'abc', // URL 无 {s}，但 Leaflet 仍会访问 subdomains，需提供非空值避免崩溃
     gcj02: false,
     attribution: '© Esri'
   },
@@ -47,7 +47,7 @@ const BASEMAPS: BasemapDef[] = [
     id: 'osm',
     name: 'OSM',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    subdomains: 'abc', // URL 无 {s}，但避免 undefined 传入 Leaflet
+    subdomains: 'abc', // URL 无 {s}，但 Leaflet 仍会访问 subdomains，需提供非空值避免崩溃
     gcj02: false,
     attribution: '© OpenStreetMap'
   }
