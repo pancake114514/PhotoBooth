@@ -8,7 +8,9 @@ const api: Api = {
     list: () => ipcRenderer.invoke('folders:list'),
     add: () => ipcRenderer.invoke('folders:add'),
     remove: (id: number) => ipcRenderer.invoke('folders:remove', id),
-    rescan: (id: number) => ipcRenderer.invoke('folders:rescan', id)
+    rescan: (id: number) => ipcRenderer.invoke('folders:rescan', id),
+    showContextMenu: (path: string, x: number, y: number) =>
+      ipcRenderer.invoke('folders:context-menu', path, x, y)
   },
   photos: {
     list: (folderId: number, offset: number, limit: number, opts?) =>

@@ -42,6 +42,10 @@ function Sidebar({
               key={f.id}
               className={`folder-item${f.id === activeId ? ' active' : ''}`}
               onClick={() => onSelect(f.id)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                void window.api.folders.showContextMenu(f.path, e.clientX, e.clientY)
+              }}
             >
               <div className="folder-name">{f.name}</div>
               <div className="folder-meta">

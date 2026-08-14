@@ -28,6 +28,24 @@ export function registerIpc(): void {
     if (folder) void scanFolder(folder.id, folder.path)
   })
 
+  ipcMain.handle('folders:context-menu', (e, path: string, x: number, y: number) => {
+    const menu = Menu.buildFromTemplate([
+      {
+        label: '在资源管理器中打开',
+        click: () => {
+          void shell.openPath(path).then((err) => {
+            if (err) console.error('[open-folder]', path, err)
+          })
+        }
+      }
+    ])
+    menu.popup({
+      window: BrowserWindow.fromWebContents(e.sender) ?? undefined,
+      x: Math.round(x),
+      y: Math.round(y)
+    })
+  })
+
   ipcMain.handle('photos:list', (_e, folderId: number, offset: number, limit: number, opts) =>
     db.listPhotos(folderId, offset, limit, opts)
   )
