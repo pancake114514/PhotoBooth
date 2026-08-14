@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -8,6 +8,13 @@ import { initThumbs } from './thumbs'
 import { registerIpc } from './ipc'
 
 registerSchemes()
+
+// 高德/卫星瓦片服务器对 TLS 1.3 握手存在兼容性问题（ERR_CONNECTION_CLOSED），
+// 强制使用 TLS 1.2 以绕过握手失败
+app.commandLine.appendSwitch('ssl-version-max', 'tls1.2')
+// 若系统配置了代理（翻墙），国内瓦片域名可能被错误地走代理导致握手失败，
+// 让 autonavi.com 直连绕过代理
+app.commandLine.appendSwitch('proxy-bypass-list', '<local>;*.is.autonavi.com;*.autonavi.com')
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,6 +48,15 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.photobooth')
+
+  // 高德/卫星瓦片防盗链：为 autonavi.com 的瓦片请求设置 Referer，避免 403
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: ['https://*.is.autonavi.com/*'] },
+    (details, callback) => {
+      details.requestHeaders['Referer'] = 'https://www.amap.com/'
+      callback({ requestHeaders: details.requestHeaders })
+    }
+  )
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

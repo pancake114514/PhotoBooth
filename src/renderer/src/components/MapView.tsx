@@ -130,7 +130,7 @@ function ClusterLayer({
 }
 
 function MapView({ photos, total, onOpenPhoto }: MapViewProps): React.JSX.Element {
-  const [basemapId, setBasemapId] = useState('arcgis') // 默认 ArcGIS（直连速度快）
+  const [basemapId, setBasemapId] = useState('osm') // 默认 OSM
   const basemap = BASEMAPS.find((b) => b.id === basemapId) ?? BASEMAPS[0]
   const noGps = total - photos.length
 
@@ -138,6 +138,7 @@ function MapView({ photos, total, onOpenPhoto }: MapViewProps): React.JSX.Elemen
     <div className="map-view">
       <MapContainer center={[30, 105]} zoom={4} className="map-canvas" scrollWheelZoom>
         <TileLayer
+          key={basemap.id}
           url={basemap.url}
           subdomains={basemap.subdomains}
           attribution={basemap.attribution}
