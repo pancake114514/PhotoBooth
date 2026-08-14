@@ -18,7 +18,9 @@ const api: Api = {
     setRating: (id: number, rating: number) =>
       ipcRenderer.invoke('photos:setRating', id, rating),
     setFavorite: (id: number, favorite: boolean) =>
-      ipcRenderer.invoke('photos:setFavorite', id, favorite)
+      ipcRenderer.invoke('photos:setFavorite', id, favorite),
+    showContextMenu: (path: string, x: number, y: number) =>
+      ipcRenderer.invoke('photos:context-menu', path, x, y)
   },
   thumbUrl: (thumbPath: string) => `thumbs://thumb/${thumbPath}`,
   photoUrl: (path: string) => `photo://local/?p=${encodeURIComponent(path)}`,

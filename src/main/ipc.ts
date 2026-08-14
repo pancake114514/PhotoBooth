@@ -1,5 +1,5 @@
 import { basename } from 'path'
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import * as db from './db'
 import { scanFolder } from './scanner'
 
@@ -42,5 +42,29 @@ export function registerIpc(): void {
 
   ipcMain.handle('photos:setFavorite', (_e, id: number, favorite: boolean) => {
     db.updateFavorite(id, favorite)
+  })
+
+  ipcMain.handle('photos:context-menu', (e, path: string, x: number, y: number) => {
+    const menu = Menu.buildFromTemplate([
+      {
+        label: '在资源管理器中打开',
+        click: () => {
+          shell.showItemInFolder(path)
+        }
+      },
+      {
+        label: '用系统图片浏览器打开',
+        click: () => {
+          void shell.openPath(path).then((err) => {
+            if (err) console.error('[open-photo]', path, err)
+          })
+        }
+      }
+    ])
+    menu.popup({
+      window: BrowserWindow.fromWebContents(e.sender) ?? undefined,
+      x: Math.round(x),
+      y: Math.round(y)
+    })
   })
 }

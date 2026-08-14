@@ -40,7 +40,15 @@ function PhotoGrid({ photos, total, loading, onLoadMore, onOpen }: Props): React
   return (
     <div className="grid">
       {photos.map((p, i) => (
-        <figure key={p.id} className="cell" onClick={() => onOpen(i)}>
+        <figure
+          key={p.id}
+          className="cell"
+          onClick={() => onOpen(i)}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            void window.api.photos.showContextMenu(p.path, e.clientX, e.clientY)
+          }}
+        >
           <img
             className="cell-img"
             src={p.thumbPath ? window.api.thumbUrl(p.thumbPath) : window.api.photoUrl(p.path)}

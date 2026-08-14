@@ -86,6 +86,8 @@ export interface Api {
     gpsList: (folderId: number, opts?: PhotoListOptions) => Promise<GpsPhotoList>
     setRating: (id: number, rating: number) => Promise<void>
     setFavorite: (id: number, favorite: boolean) => Promise<void>
+    /** 右键照片：弹出系统上下文菜单（在资源管理器中显示 / 用系统图片浏览器打开） */
+    showContextMenu: (path: string, x: number, y: number) => Promise<void>
   }
   /** 缩略图缓存文件名 → 协议 URL */
   thumbUrl: (thumbPath: string) => string
