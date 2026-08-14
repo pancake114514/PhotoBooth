@@ -52,12 +52,23 @@ function Lightbox({
 
   return (
     <div className="lightbox" onClick={onClose}>
-      <div className="lightbox-stage" onClick={(e) => e.stopPropagation()}>
+      <div className="lightbox-stage">
         <img
           className="lightbox-img"
           src={window.api.photoUrl(photo.path)}
           alt={photo.filename}
+          onClick={(e) => e.stopPropagation()}
         />
+        <button
+          className="lb-close"
+          title="关闭预览 (Esc)"
+          onClick={(e) => {
+            e.stopPropagation()
+            onClose()
+          }}
+        >
+          ×
+        </button>
         <button
           className="lb-nav lb-prev"
           title="上一张 (←)"

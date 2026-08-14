@@ -535,6 +535,26 @@
   right: 12px;
 }
 
+.lb-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.lb-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ============ 视图切换 ============ */
 .view-switch {
   display: inline-flex;
