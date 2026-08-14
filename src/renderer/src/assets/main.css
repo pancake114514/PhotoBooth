@@ -1,19 +1,24 @@
 /* ============ 整体布局 ============ */
 .app {
-  display: flex;
   height: 100vh;
   overflow: hidden;
+}
+
+.app-group {
+  height: 100%;
+  width: 100%;
 }
 
 /* ============ 侧边栏（多文件夹） ============ */
 .sidebar {
   position: relative;
-  width: 240px;
-  flex-shrink: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--ev-c-black-soft);
   border-right: 1px solid var(--ev-c-gray-3);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .sidebar-header {
@@ -34,19 +39,17 @@
   gap: 2px;
 }
 
-/* 右侧拖动分隔条：拖动调整宽度，拖到很窄松手即收起 */
-.sidebar-resizer {
-  position: absolute;
-  top: 0;
-  right: 0;
+/* 侧边栏拖动分隔条（由 react-resizable-panels 提供） */
+.sidebar-separator {
   width: 6px;
-  height: 100%;
   cursor: col-resize;
-  z-index: 10;
+  background: transparent;
   transition: background 0.15s ease;
+  outline: none; /* 去掉浏览器默认的 focus 光晕 */
 }
 
-.sidebar-resizer:hover {
+.sidebar-separator:hover,
+.sidebar-separator[data-separator='active'] {
   background: var(--ev-c-gray-1);
 }
 
@@ -179,7 +182,7 @@
 
 /* ============ 主区 ============ */
 .main {
-  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   min-width: 0;

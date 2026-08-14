@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 import type {
   Folder,
   Photo,
@@ -50,6 +51,8 @@ function App(): React.JSX.Element {
   const [sortBy, setSortBy] = useState<SortBy>('taken_desc')
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const sidebarPanelRef = usePanelRef()
 
   // 搜索防抖：停止输入 300ms 后生效
   useEffect(() => {
@@ -213,6 +216,10 @@ function App(): React.JSX.Element {
     void window.api.folders.rescan(id)
   }
 
+  const handleSidebarExpand = useCallback((): void => {
+    sidebarPanelRef.current?.expand()
+  }, [])
+
   const activeFolder = folders.find((f) => f.id === activeId) ?? null
   const activeScan = activeId != null ? scanMap[activeId] : undefined
   const isScanning =
@@ -220,15 +227,33 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <Sidebar
-        folders={folders}
-        activeId={activeId}
-        scanMap={scanMap}
-        onSelect={setActiveId}
-        onAdd={handleAdd}
-        onRemove={handleRemove}
-      />
-      <main className="main">
+      <Group orientation="horizontal" className="app-group">
+        <Panel
+          id="sidebar"
+          collapsible
+          collapsedSize={40}
+          minSize={200}
+          maxSize={400}
+          defaultSize={200}
+          panelRef={sidebarPanelRef}
+          onResize={(size) => {
+            setSidebarCollapsed(size.inPixels < 100)
+          }}
+        >
+          <Sidebar
+            folders={folders}
+            activeId={activeId}
+            scanMap={scanMap}
+            collapsed={sidebarCollapsed}
+            onSelect={setActiveId}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+            onExpand={handleSidebarExpand}
+          />
+        </Panel>
+        <Separator className="sidebar-separator" />
+        <Panel id="main" minSize={400}>
+          <main className="main">
         <header className="toolbar">
           <h1>{activeFolder ? activeFolder.name : '照片'}</h1>
           <div className="toolbar-controls">
@@ -320,7 +345,9 @@ function App(): React.JSX.Element {
             onOpenPhoto={(p) => setLightbox({ photos: [p], index: 0 })}
           />
         )}
-      </main>
+          </main>
+        </Panel>
+      </Group>
       {lightbox != null && lightbox.photos[lightbox.index] != null && (
         <Lightbox
           photos={lightbox.photos}
