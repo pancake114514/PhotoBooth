@@ -53,6 +53,7 @@ function App(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const sidebarPanelRef = usePanelRef()
+  const [scanNotice, setScanNotice] = useState<{ id: number; text: string } | null>(null)
 
   // 搜索防抖：停止输入 300ms 后生效
   useEffect(() => {
@@ -134,6 +135,12 @@ function App(): React.JSX.Element {
     const off = window.api.onScanProgress((p) => {
       setScanMap((m) => ({ ...m, [p.folderId]: p }))
       if (p.phase === 'done' || p.phase === 'error') {
+        // 扫描完成提示（含增量跳过信息），3 秒后自动消失
+        if (p.phase === 'done' && p.message) {
+          const id = Date.now()
+          setScanNotice({ id, text: p.message })
+          setTimeout(() => setScanNotice((cur) => (cur?.id === id ? null : cur)), 3000)
+        }
         void refreshFolders() // 更新文件夹照片计数
         if (p.folderId === activeIdRef.current) {
           if (viewRef.current === 'map') {
@@ -311,6 +318,7 @@ function App(): React.JSX.Element {
             </select>
           </div>
           <div className="toolbar-info">
+            {scanNotice && <span className="scan-notice">{scanNotice.text}</span>}
             {isScanning && activeScan && (
               <span className="scan-status">
                 {activeScan.phase === 'walking'

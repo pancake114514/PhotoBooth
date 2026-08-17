@@ -258,6 +258,11 @@
   color: var(--ev-c-text-2);
 }
 
+.scan-notice {
+  color: #9ecbff;
+  font-size: 12px;
+}
+
 /* ============ 照片网格 ============ */
 .grid {
   flex: 1;
