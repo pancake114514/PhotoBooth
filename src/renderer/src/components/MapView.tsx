@@ -20,14 +20,6 @@ interface BasemapDef {
 
 const BASEMAPS: BasemapDef[] = [
   {
-    id: 'arcgis',
-    name: 'ArcGIS',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    subdomains: 'abc', // URL 无 {s}，但 Leaflet 仍会访问 subdomains，需提供非空值避免崩溃
-    gcj02: false,
-    attribution: '© Esri'
-  },
-  {
     id: 'amap',
     name: '高德',
     url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
@@ -50,6 +42,14 @@ const BASEMAPS: BasemapDef[] = [
     subdomains: 'abc', // URL 无 {s}，但 Leaflet 仍会访问 subdomains，需提供非空值避免崩溃
     gcj02: false,
     attribution: '© OpenStreetMap'
+  },
+  {
+    id: 'arcgis',
+    name: 'ARCGIS',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    subdomains: 'abc', // URL 无 {s}，但 Leaflet 仍会访问 subdomains，需提供非空值避免崩溃
+    gcj02: false,
+    attribution: '© Esri'
   }
 ]
 
@@ -130,7 +130,7 @@ function ClusterLayer({
 }
 
 function MapView({ photos, total, onOpenPhoto }: MapViewProps): React.JSX.Element {
-  const [basemapId, setBasemapId] = useState('osm') // 默认 OSM
+  const [basemapId, setBasemapId] = useState('amap') // 默认高德
   const basemap = BASEMAPS.find((b) => b.id === basemapId) ?? BASEMAPS[0]
   const noGps = total - photos.length
 
