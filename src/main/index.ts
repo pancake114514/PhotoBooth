@@ -17,6 +17,9 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    // 最小宽度：收起侧边栏(40) + 分隔条(6) + 主区容纳 3 列缩略图(3×160 + 2×12 gap + 2×16 padding + 滚动条≈15 = 551)
+    // 同时不小于展开侧边栏(200) + 主区 Panel minSize(400) 之和 606
+    minWidth: 610,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),

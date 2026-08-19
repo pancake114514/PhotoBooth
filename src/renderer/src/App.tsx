@@ -32,7 +32,8 @@ const FILTERS: FilterOption[] = [
 type View = 'grid' | 'map'
 
 interface LightboxState {
-  photos: Photo[]
+  /** 大图的数据来源：网格已加载分页 / 地图全部 GPS 照片 */
+  source: 'grid' | 'map'
   index: number
 }
 
@@ -121,13 +122,16 @@ function App(): React.JSX.Element {
   // 切换文件夹 / 过滤 / 排序 / 搜索 / 视图 → 重新加载
   useEffect(() => {
     if (activeId == null) return
-    if (view === 'map') {
-      void loadGps(activeId)
-    } else {
-      setPhotos([])
-      setTotal(0)
-      void loadPage(activeId, 0, false)
-    }
+    // setTimeout 排程：loadPage/loadGps 内部有同步 setState，
+    // 直接调用会触发 react-hooks/set-state-in-effect 报错（与初始加载同款处理）
+    const timer = setTimeout(() => {
+      if (view === 'map') {
+        void loadGps(activeId)
+      } else {
+        void loadPage(activeId, 0, false)
+      }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [activeId, filterId, sortBy, search, view, loadPage, loadGps])
 
   // 订阅扫描进度
@@ -188,9 +192,6 @@ function App(): React.JSX.Element {
       const updated = { ...photo, ...patch }
       setPhotos((prev) => prev.map((p) => (p.id === photo.id ? updated : p)))
       setGpsPhotos((prev) => prev.map((p) => (p.id === photo.id ? updated : p)))
-      setLightbox((s) =>
-        s ? { ...s, photos: s.photos.map((p) => (p.id === photo.id ? updated : p)) } : s
-      )
       if (!matchesFilter(updated)) reloadActive() // 不再满足过滤条件 → 从列表消失
     },
     [matchesFilter, reloadActive]
@@ -344,28 +345,40 @@ function App(): React.JSX.Element {
             total={total}
             loading={loading}
             onLoadMore={loadMore}
-            onOpen={(i) => setLightbox({ photos, index: i })}
+            onOpen={(i) => setLightbox({ source: 'grid', index: i })}
           />
         ) : (
           <MapView
             photos={gpsPhotos}
             total={gpsTotal}
-            onOpenPhoto={(p) => setLightbox({ photos: [p], index: 0 })}
+            onOpenPhoto={(p) => {
+              // 用全部带 GPS 照片作为大图列表，保证左右切换可用
+              const i = gpsPhotos.findIndex((x) => x.id === p.id)
+              setLightbox({ source: 'map', index: i >= 0 ? i : 0 })
+            }}
           />
         )}
           </main>
         </Panel>
       </Group>
-      {lightbox != null && lightbox.photos[lightbox.index] != null && (
-        <Lightbox
-          photos={lightbox.photos}
-          index={lightbox.index}
-          onClose={() => setLightbox(null)}
-          onNavigate={(i) => setLightbox((s) => (s ? { ...s, index: i } : s))}
-          onSetRating={handleSetRating}
-          onSetFavorite={handleSetFavorite}
-        />
-      )}
+      {(() => {
+        if (lightbox == null) return null
+        // 大图数据实时取自当前视图数据源：网格分页 / 地图全部 GPS 照片
+        const lbPhotos = lightbox.source === 'grid' ? photos : gpsPhotos
+        if (lbPhotos[lightbox.index] == null) return null
+        return (
+          <Lightbox
+            photos={lbPhotos}
+            index={lightbox.index}
+            total={lightbox.source === 'grid' ? total : gpsPhotos.length}
+            onLoadMore={lightbox.source === 'grid' ? loadMore : undefined}
+            onClose={() => setLightbox(null)}
+            onNavigate={(i) => setLightbox((s) => (s ? { ...s, index: i } : s))}
+            onSetRating={handleSetRating}
+            onSetFavorite={handleSetFavorite}
+          />
+        )
+      })()}
     </div>
   )
 }
