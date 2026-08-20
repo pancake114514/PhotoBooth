@@ -1,16 +1,19 @@
 import { createHash } from 'crypto'
 import { extname, join } from 'path'
-import { mkdirSync } from 'fs'
+import { existsSync, mkdirSync } from 'fs'
 import { readFile } from 'fs/promises'
 import sharp from 'sharp'
 import heicDecode from 'heic-decode'
 
 let thumbsDir = ''
+let previewsDir = ''
 
-/** 在应用数据目录下创建缩略图缓存目录 */
+/** 在应用数据目录下创建缩略图 / 大图预览缓存目录 */
 export function initThumbs(baseDir: string): void {
   thumbsDir = join(baseDir, 'thumbs')
+  previewsDir = join(baseDir, 'previews')
   mkdirSync(thumbsDir, { recursive: true })
+  mkdirSync(previewsDir, { recursive: true })
 }
 
 export function getThumbsDir(): string {
@@ -66,4 +69,44 @@ async function generateThumbHeic(filePath: string, thumbPath: string): Promise<T
     console.error('[thumbs:heic]', filePath, e)
     return { thumbPath: null, width: null, height: null }
   }
+}
+
+const PREVIEW_SIZE = 2560
+
+/** 进行中的预览图生成任务（防止同一文件并发重复转码） */
+const previewTasks = new Map<string, Promise<string | null>>()
+
+/**
+ * 为 HEIC/HEIF 原图生成一张大图预览 JPEG（最长边 PREVIEW_SIZE），供大图预览使用。
+ * Chromium 的 <img> 无法解码 HEIC，必须先转码。
+ * 结果缓存到应用数据目录 previews/，返回缓存文件绝对路径；失败返回 null。
+ */
+export function getPreviewPath(filePath: string): Promise<string | null> {
+  const key = thumbFileName(filePath) // sha1(路径) 与缩略图同源，保证唯一
+  const cached = join(previewsDir, key)
+  if (existsSync(cached)) return Promise.resolve(cached)
+  const running = previewTasks.get(key)
+  if (running) return running
+
+  const task = (async (): Promise<string | null> => {
+    try {
+      const buffer = await readFile(filePath)
+      const decoded = await heicDecode({ buffer })
+      await sharp(decoded.data, {
+        raw: { width: decoded.width, height: decoded.height, channels: 4 }
+      })
+        .rotate()
+        .resize({ width: PREVIEW_SIZE, height: PREVIEW_SIZE, fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toFile(cached)
+      return cached
+    } catch (e) {
+      console.error('[preview:heic]', filePath, e)
+      return null
+    } finally {
+      previewTasks.delete(key)
+    }
+  })()
+  previewTasks.set(key, task)
+  return task
 }
