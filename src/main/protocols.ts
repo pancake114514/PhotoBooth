@@ -2,7 +2,8 @@ import { app, net, protocol } from 'electron'
 import { basename, extname, isAbsolute, join } from 'path'
 import { pathToFileURL } from 'url'
 import { existsSync } from 'fs'
-import { getPreviewPath } from './thumbs'
+import { findPathByThumbPath } from './db'
+import { generateThumb, getPreviewPath } from './thumbs'
 
 /** 必须在 app ready 之前调用 */
 export function registerSchemes(): void {
@@ -17,9 +18,19 @@ export function registerProtocols(): void {
   const thumbsDir = join(app.getPath('userData'), 'thumbs')
 
   // thumbs://thumb/<cacheFileName> —— 缩略图缓存文件
-  protocol.handle('thumbs', (req) => {
+  // 缓存缺失（被清理/删除）时按需重新生成，避免前端裂图
+  protocol.handle('thumbs', async (req) => {
     const name = basename(new URL(req.url).pathname) // basename 消毒，防目录穿越
-    return net.fetch(pathToFileURL(join(thumbsDir, name)).toString())
+    const file = join(thumbsDir, name)
+    if (!existsSync(file)) {
+      const orig = findPathByThumbPath(name)
+      if (orig) {
+        const res = await generateThumb(orig)
+        if (res.thumbPath) return net.fetch(pathToFileURL(file).toString())
+      }
+      return new Response('Not found', { status: 404 })
+    }
+    return net.fetch(pathToFileURL(file).toString())
   })
 
   // photo://local/?p=<encodeURIComponent(绝对路径)> —— 原图（含浏览器可解码的 HEIC）
@@ -28,7 +39,7 @@ export function registerProtocols(): void {
     if (!isAbsolute(p) || !existsSync(p)) {
       return new Response('Not found', { status: 404 })
     }
-    // Chromium 的 <img> 无法解码 HEIC/HEIF，先转成 JPEG 大图预览
+    // Chromium 的 <img> 无法解码 HEIC/HEIF，先转成 JPEG 预览；其余格式直接加载原图
     const ext = extname(p).toLowerCase()
     if (ext === '.heic' || ext === '.heif') {
       const preview = await getPreviewPath(p)

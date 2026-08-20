@@ -92,8 +92,13 @@ export function addFolder(path: string, name: string): Folder {
   return getFolder(row.id)!
 }
 
-export function removeFolder(id: number): void {
+export function removeFolder(id: number): string[] {
+  // 先取出该文件夹全部照片路径（删除记录后用于清理对应缓存文件）
+  const rows = db
+    .prepare('SELECT path FROM photos WHERE folder_id = ?')
+    .all(id) as Array<{ path: string }>
   db.prepare('DELETE FROM folders WHERE id = ?').run(id)
+  return rows.map((r) => r.path)
 }
 
 // ---------- photos ----------
@@ -189,6 +194,14 @@ export function countPhotos(folderId: number): number {
   return total
 }
 
+/** 通过缩略图缓存文件名反查照片原路径（缓存文件缺失时用于按需重建） */
+export function findPathByThumbPath(thumbPath: string): string | null {
+  const row = db
+    .prepare('SELECT path FROM photos WHERE thumb_path = ? LIMIT 1')
+    .get(thumbPath) as { path: string } | undefined
+  return row?.path ?? null
+}
+
 // ---------- 扫描支持 ----------
 
 export interface PhotoRecord {
@@ -240,14 +253,21 @@ export function scanBegin(folderId: number): void {
   db.prepare('DELETE FROM tmp_scan WHERE folder_id = ?').run(folderId)
 }
 
-/** 获取该文件夹现有记录（path → mtime/size），供增量扫描跳过未变化的文件 */
-export function getExistingRecords(folderId: number): Map<string, { mtime: number; size: number }> {
+/** 获取该文件夹现有记录（path → mtime/size/thumbPath），供增量扫描跳过未变化的文件 */
+export function getExistingRecords(
+  folderId: number
+): Map<string, { mtime: number; size: number; thumbPath: string | null }> {
   const rows = db
-    .prepare('SELECT path, mtime, size FROM photos WHERE folder_id = ?')
-    .all(folderId) as Array<{ path: string; mtime: number | null; size: number | null }>
-  const map = new Map<string, { mtime: number; size: number }>()
+    .prepare('SELECT path, mtime, size, thumb_path FROM photos WHERE folder_id = ?')
+    .all(folderId) as Array<{
+    path: string
+    mtime: number | null
+    size: number | null
+    thumb_path: string | null
+  }>
+  const map = new Map<string, { mtime: number; size: number; thumbPath: string | null }>()
   for (const r of rows) {
-    map.set(r.path, { mtime: r.mtime ?? 0, size: r.size ?? 0 })
+    map.set(r.path, { mtime: r.mtime ?? 0, size: r.size ?? 0, thumbPath: r.thumb_path })
   }
   return map
 }
@@ -256,10 +276,20 @@ export function scanMark(folderId: number, path: string): void {
   db.prepare('INSERT INTO tmp_scan (folder_id, path) VALUES (?, ?)').run(folderId, path)
 }
 
-/** 结束扫描：删除该文件夹下本次未出现的记录（文件已被删除/移动） */
-export function scanEnd(folderId: number): void {
-  db.prepare(
-    `DELETE FROM photos
-     WHERE folder_id = ? AND path NOT IN (SELECT path FROM tmp_scan WHERE folder_id = ?)`
-  ).run(folderId, folderId)
+/** 结束扫描：删除该文件夹下本次未出现的记录（文件已被删除/移动），返回被删除的照片路径 */
+export function scanEnd(folderId: number): string[] {
+  const rows = db
+    .prepare(
+      `SELECT path FROM photos
+       WHERE folder_id = ? AND path NOT IN (SELECT path FROM tmp_scan WHERE folder_id = ?)`
+    )
+    .all(folderId, folderId) as Array<{ path: string }>
+  const removed = rows.map((r) => r.path)
+  if (removed.length > 0) {
+    db.prepare(
+      `DELETE FROM photos
+       WHERE folder_id = ? AND path NOT IN (SELECT path FROM tmp_scan WHERE folder_id = ?)`
+    ).run(folderId, folderId)
+  }
+  return removed
 }

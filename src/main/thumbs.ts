@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile } from 'fs/promises'
+import { readFile, readdir, stat, unlink } from 'fs/promises'
 import sharp from 'sharp'
 import heicDecode from 'heic-decode'
 
@@ -14,10 +14,101 @@ export function initThumbs(baseDir: string): void {
   previewsDir = join(baseDir, 'previews')
   mkdirSync(thumbsDir, { recursive: true })
   mkdirSync(previewsDir, { recursive: true })
+  // 启动时检查一次缓存容量，超限（>200MB）即按 LRU 清理最旧缓存
+  void maybeCleanCache()
 }
 
 export function getThumbsDir(): string {
   return thumbsDir
+}
+
+// ---------- 缓存清理 ----------
+
+/** 大图预览缓存容量上限：200MB（缩略图不做容量清理，仅孤儿清理） */
+const CACHE_LIMIT = 200 * 1024 * 1024
+/** 低于该水位即停止删除（留出余量，避免频繁触发清理） */
+const CACHE_LOW_WATER = 180 * 1024 * 1024
+/** 两次清理检查的最小间隔：避免每次生成缓存都全目录扫描 */
+const CLEAN_INTERVAL = 30_000
+let lastCleanAt = 0
+let cleaning: Promise<void> | null = null
+
+/**
+ * 检查大图预览缓存总大小，超过上限时按 mtime 从旧到新删除文件，直到低于低水位。
+ * 节流 + 单飞：最多 30s 检查一次，并发调用复用同一任务。
+ */
+function maybeCleanCache(): void {
+  const now = Date.now()
+  if (now - lastCleanAt < CLEAN_INTERVAL) return
+  lastCleanAt = now
+  if (cleaning) return
+  cleaning = (async () => {
+    try {
+      const files: Array<{ path: string; size: number; mtime: number }> = []
+      let total = 0
+      let names: string[]
+      try {
+        names = await readdir(previewsDir)
+      } catch {
+        return // 目录不存在（尚未初始化）时跳过
+      }
+      for (const name of names) {
+        const full = join(previewsDir, name)
+        try {
+          const st = await stat(full)
+          if (!st.isFile()) continue
+          files.push({ path: full, size: st.size, mtime: st.mtimeMs })
+          total += st.size
+        } catch {
+          // 文件已被删除/占用：忽略
+        }
+      }
+      if (total <= CACHE_LIMIT) return
+      // LRU：按 mtime 升序（最旧的先删）
+      files.sort((a, b) => a.mtime - b.mtime)
+      let removed = 0
+      for (const f of files) {
+        if (total - removed <= CACHE_LOW_WATER) break
+        try {
+          await unlink(f.path)
+          removed += f.size
+        } catch {
+          // 文件占用等删除失败：跳过继续
+        }
+      }
+      if (removed > 0) {
+        console.log(`[cache] 预览缓存超出 ${CACHE_LIMIT / 1024 / 1024}MB 上限，清理 ${Math.round(removed / 1024)}KB 最旧缓存`)
+      }
+    } finally {
+      cleaning = null
+    }
+  })()
+}
+
+/**
+ * 删除原文件对应的缓存（缩略图 + 大图预览）。
+ * 用于照片被删除/移除文件夹后的孤儿清理：缩略图仅在原文件消失时清除。
+ */
+export function removeCacheFiles(filePaths: string[]): void {
+  for (const p of filePaths) {
+    const key = thumbFileName(p)
+    // 缩略图缓存：sha1.jpg
+    const thumb = join(thumbsDir, key)
+    if (existsSync(thumb)) {
+      unlink(thumb).catch(() => {
+        // 删除失败（占用等）：忽略，下次扫描再清理
+      })
+    }
+    // 预览缓存：旧版 sha1.jpg 与新版 sha1-pv.jpg 都清理
+    for (const name of [key, previewFileName(p)]) {
+      const f = join(previewsDir, name)
+      if (existsSync(f)) {
+        unlink(f).catch(() => {
+          // 删除失败（占用等）：忽略，下次扫描再清理
+        })
+      }
+    }
+  }
 }
 
 export function thumbFileName(filePath: string): string {
@@ -48,6 +139,7 @@ export async function generateThumb(filePath: string): Promise<ThumbResult> {
       .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 82 })
       .toFile(join(thumbsDir, thumbPath))
+    maybeCleanCache()
     return { thumbPath, width: meta.width ?? null, height: meta.height ?? null }
   } catch {
     return { thumbPath: null, width: null, height: null }
@@ -64,6 +156,7 @@ async function generateThumbHeic(filePath: string, thumbPath: string): Promise<T
       .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 82 })
       .toFile(join(thumbsDir, thumbPath))
+    maybeCleanCache()
     return { thumbPath, width: decoded.width, height: decoded.height }
   } catch (e) {
     console.error('[thumbs:heic]', filePath, e)
@@ -71,18 +164,21 @@ async function generateThumbHeic(filePath: string, thumbPath: string): Promise<T
   }
 }
 
-const PREVIEW_SIZE = 2560
-
 /** 进行中的预览图生成任务（防止同一文件并发重复转码） */
 const previewTasks = new Map<string, Promise<string | null>>()
 
+/** 预览缓存文件名（带版本后缀，避免旧版降采样缓存被误用） */
+function previewFileName(filePath: string): string {
+  return thumbFileName(filePath).replace(/\.jpg$/, '-pv.jpg')
+}
+
 /**
- * 为 HEIC/HEIF 原图生成一张大图预览 JPEG（最长边 PREVIEW_SIZE），供大图预览使用。
- * Chromium 的 <img> 无法解码 HEIC，必须先转码。
+ * 为 HEIC/HEIF 原图生成全分辨率 JPEG 预览，供大图预览使用。
+ * Chromium 的 <img> 无法解码 HEIC，必须先转码；其余格式由 photo:// 直接加载原图。
  * 结果缓存到应用数据目录 previews/，返回缓存文件绝对路径；失败返回 null。
  */
 export function getPreviewPath(filePath: string): Promise<string | null> {
-  const key = thumbFileName(filePath) // sha1(路径) 与缩略图同源，保证唯一
+  const key = previewFileName(filePath)
   const cached = join(previewsDir, key)
   if (existsSync(cached)) return Promise.resolve(cached)
   const running = previewTasks.get(key)
@@ -92,13 +188,14 @@ export function getPreviewPath(filePath: string): Promise<string | null> {
     try {
       const buffer = await readFile(filePath)
       const decoded = await heicDecode({ buffer })
+      // 全分辨率输出（不降采样），与 JPG 原图浏览一致
       await sharp(decoded.data, {
         raw: { width: decoded.width, height: decoded.height, channels: 4 }
       })
         .rotate()
-        .resize({ width: PREVIEW_SIZE, height: PREVIEW_SIZE, fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 85 })
         .toFile(cached)
+      maybeCleanCache()
       return cached
     } catch (e) {
       console.error('[preview:heic]', filePath, e)

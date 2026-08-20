@@ -1,8 +1,9 @@
 import { basename, extname, join } from 'path'
+import { existsSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { BrowserWindow } from 'electron'
 import { parseExif } from './exif'
-import { generateThumb } from './thumbs'
+import { generateThumb, getThumbsDir, removeCacheFiles } from './thumbs'
 import { getExistingRecords, scanBegin, scanEnd, scanMark, upsertPhoto } from './db'
 import type { ScanProgress } from '../shared/types'
 
@@ -86,7 +87,10 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
         const st = await stat(filePath)
         const mtime = Math.floor(st.mtimeMs)
         const prev = existing.get(filePath)
-        if (prev && prev.mtime === mtime && prev.size === st.size) {
+        // 增量跳过：文件未变化 且 缩略图缓存仍存在（缓存被清理后重新生成）
+        const thumbExists =
+          prev != null && prev.thumbPath != null && existsSync(join(getThumbsDir(), prev.thumbPath))
+        if (prev && prev.mtime === mtime && prev.size === st.size && thumbExists) {
           skipped++
           scanMark(folderId, filePath) // 保持记录存在，不重新解析
         } else {
@@ -125,7 +129,9 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
       }
     })
 
-    scanEnd(folderId)
+    const removed = scanEnd(folderId)
+    // 扫描期间从磁盘消失的照片：同步清理其缩略图/预览缓存
+    if (removed.length > 0) removeCacheFiles(removed)
     sendProgress({
       folderId,
       phase: 'done',

@@ -2,6 +2,7 @@ import { basename } from 'path'
 import { BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import * as db from './db'
 import { scanFolder } from './scanner'
+import { removeCacheFiles } from './thumbs'
 
 export function registerIpc(): void {
   ipcMain.handle('folders:list', () => db.listFolders())
@@ -20,7 +21,8 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle('folders:remove', (_e, id: number) => {
-    db.removeFolder(id)
+    const removed = db.removeFolder(id)
+    if (removed.length > 0) removeCacheFiles(removed) // 移除文件夹时清理其照片缓存
   })
 
   ipcMain.handle('folders:rescan', (_e, id: number) => {
