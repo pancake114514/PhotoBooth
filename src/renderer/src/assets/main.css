@@ -410,6 +410,16 @@
   justify-content: center;
   min-width: 0;
   padding: 24px;
+  overflow: hidden; /* 放大后超出舞台的部分被裁剪，不遮挡右侧栏 */
+  user-select: none;
+}
+
+.lightbox-stage.pannable {
+  cursor: grab;
+}
+
+.lightbox-stage.pannable.dragging {
+  cursor: grabbing;
 }
 
 .lightbox-img {
@@ -417,6 +427,8 @@
   max-height: 88vh;
   object-fit: contain;
   border-radius: 4px;
+  transform-origin: center center;
+  transition: transform 0.08s ease-out;
 }
 
 /* 右侧信息栏：与当前暗色主题一致的纯色背景 */
@@ -527,6 +539,16 @@
   padding: 8px 14px;
   color: rgba(255, 255, 255, 0.85);
   border-bottom: 1px solid var(--ev-c-gray-3);
+}
+
+.zoom-indicator {
+  margin-left: 10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(158, 203, 255, 0.16);
+  color: #9ecbff;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .lightbox-detail {
