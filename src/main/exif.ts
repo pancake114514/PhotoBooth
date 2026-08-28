@@ -77,7 +77,24 @@ function toDate(v: unknown): number | null {
   return null
 }
 
+/** 超时毫秒数：exifr 对损坏文件可能挂起，超时后返回空 EXIF 并跳过 */
+const EXIF_TIMEOUT = 15_000
+
 export async function parseExif(filePath: string): Promise<ParsedExif> {
+  try {
+    const result = await Promise.race([
+      parseExifInternal(filePath),
+      new Promise<ParsedExif>((_, reject) =>
+        setTimeout(() => reject(new Error('EXIF parse timeout')), EXIF_TIMEOUT)
+      )
+    ])
+    return result
+  } catch {
+    return { ...EMPTY }
+  }
+}
+
+async function parseExifInternal(filePath: string): Promise<ParsedExif> {
   try {
     const out = await exifr.parse(filePath, {
       pick: [

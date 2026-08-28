@@ -9,6 +9,7 @@ interface Props {
   onAdd: () => void
   onRemove: (id: number) => void
   onExpand: () => void
+  onCancelScan: (id: number) => void
 }
 
 function Sidebar({
@@ -19,7 +20,8 @@ function Sidebar({
   onSelect,
   onAdd,
   onRemove,
-  onExpand
+  onExpand,
+  onCancelScan
 }: Props): React.JSX.Element {
   if (collapsed) {
     return (
@@ -67,6 +69,16 @@ function Sidebar({
                 {scanning && scan.total > 0 && (
                   <span className="folder-scan">
                     {Math.round((scan.done / scan.total) * 100)}%
+                    <button
+                      className="btn-icon folder-cancel"
+                      title="取消扫描"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCancelScan(f.id)
+                      }}
+                    >
+                      ×
+                    </button>
                   </span>
                 )}
               </div>

@@ -123,27 +123,42 @@ export interface ThumbResult {
 }
 
 const THUMB_SIZE = 512
+/** 单张缩略图生成超时毫秒数：sharp 对损坏/极大文件可能挂起，超时后返回 null */
+const THUMB_TIMEOUT = 30_000
 
-/** 生成 JPEG 缩略图；失败（格式不支持等）时返回 null，由前端回退到原图加载 */
+/** 带超时的 Promise 包装 */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+  ])
+}
+
+/** 生成 JPEG 缩略图；失败（格式不支持、超时等）时返回 null，由前端回退到原图加载 */
 export async function generateThumb(filePath: string): Promise<ThumbResult> {
   const thumbPath = thumbFileName(filePath)
   try {
     const ext = extname(filePath).toLowerCase()
     // HEIC/HEIF：sharp（libvips）不带 libheif，用 libheif wasm 解码后交给 sharp 压缩
     if (ext === '.heic' || ext === '.heif') {
-      return await generateThumbHeic(filePath, thumbPath)
+      return await withTimeout(generateThumbHeic(filePath, thumbPath), THUMB_TIMEOUT)
     }
-    const img = sharp(filePath, { failOn: 'none', limitInputPixels: 268_435_456 }).rotate()
-    const meta = await img.metadata()
-    await img
-      .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 82 })
-      .toFile(join(thumbsDir, thumbPath))
-    maybeCleanCache()
-    return { thumbPath, width: meta.width ?? null, height: meta.height ?? null }
+    return await withTimeout(generateThumbStandard(filePath, thumbPath), THUMB_TIMEOUT)
   } catch {
     return { thumbPath: null, width: null, height: null }
   }
+}
+
+/** 常规格式缩略图生成（sharp 直接处理） */
+async function generateThumbStandard(filePath: string, thumbPath: string): Promise<ThumbResult> {
+  const img = sharp(filePath, { failOn: 'none', limitInputPixels: 268_435_456 }).rotate()
+  const meta = await img.metadata()
+  await img
+    .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 82 })
+    .toFile(join(thumbsDir, thumbPath))
+  maybeCleanCache()
+  return { thumbPath, width: meta.width ?? null, height: meta.height ?? null }
 }
 
 async function generateThumbHeic(filePath: string, thumbPath: string): Promise<ThumbResult> {

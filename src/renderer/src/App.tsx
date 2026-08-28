@@ -224,6 +224,10 @@ function App(): React.JSX.Element {
     void window.api.folders.rescan(id)
   }
 
+  const handleCancelScan = (id: number): void => {
+    void window.api.folders.cancelScan(id)
+  }
+
   const handleSidebarExpand = useCallback((): void => {
     sidebarPanelRef.current?.expand()
   }, [])
@@ -257,6 +261,7 @@ function App(): React.JSX.Element {
             onAdd={handleAdd}
             onRemove={handleRemove}
             onExpand={handleSidebarExpand}
+            onCancelScan={handleCancelScan}
           />
         </Panel>
         <Separator className="sidebar-separator" />
@@ -328,6 +333,14 @@ function App(): React.JSX.Element {
               </span>
             )}
             <span>{view === 'map' ? gpsTotal : total} 张</span>
+            {activeFolder && isScanning && (
+              <button
+                className="btn"
+                onClick={() => handleCancelScan(activeFolder.id)}
+              >
+                取消扫描
+              </button>
+            )}
             {activeFolder && (
               <button
                 className="btn"

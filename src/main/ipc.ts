@@ -1,7 +1,7 @@
 import { basename } from 'path'
 import { BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import * as db from './db'
-import { scanFolder } from './scanner'
+import { scanFolder, cancelScan } from './scanner'
 import { removeCacheFiles } from './thumbs'
 
 export function registerIpc(): void {
@@ -20,14 +20,31 @@ export function registerIpc(): void {
     return folder
   })
 
-  ipcMain.handle('folders:remove', (_e, id: number) => {
+  ipcMain.handle('folders:remove', async (_e, id: number) => {
+    const folder = db.getFolder(id)
+    if (!folder) return
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const res = await dialog.showMessageBox(win, {
+      type: 'warning',
+      title: '移除相册',
+      message: `确定要移除「${folder.name}」吗？`,
+      detail: `将从应用中删除 ${folder.photoCount} 张照片的索引（含评分和收藏数据），但不会删除磁盘上的照片文件。\n\n误移除后重新添加同一文件夹即可恢复照片，但评分和收藏数据无法找回。`,
+      buttons: ['移除', '取消'],
+      defaultId: 1,
+      cancelId: 1
+    })
+    if (res.response !== 0) return
     const removed = db.removeFolder(id)
-    if (removed.length > 0) removeCacheFiles(removed) // 移除文件夹时清理其照片缓存
+    if (removed.length > 0) removeCacheFiles(removed)
   })
 
   ipcMain.handle('folders:rescan', (_e, id: number) => {
     const folder = db.getFolder(id)
     if (folder) void scanFolder(folder.id, folder.path)
+  })
+
+  ipcMain.handle('folders:cancelScan', (_e, id: number) => {
+    cancelScan(id)
   })
 
   ipcMain.handle('folders:context-menu', (e, path: string, x: number, y: number) => {

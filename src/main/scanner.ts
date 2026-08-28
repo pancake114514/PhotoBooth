@@ -64,16 +64,29 @@ async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<v
 }
 
 const scanningFolders = new Set<number>()
+const cancelFlags = new Map<number, boolean>()
+
+/** 取消正在进行的扫描（安全：未在扫描则无效果） */
+export function cancelScan(folderId: number): void {
+  cancelFlags.set(folderId, true)
+}
 
 export async function scanFolder(folderId: number, dir: string): Promise<void> {
   if (scanningFolders.has(folderId)) return // 防止重复扫描同一文件夹
   scanningFolders.add(folderId)
+  cancelFlags.delete(folderId)
   let done = 0
   try {
     sendProgress({ folderId, phase: 'walking', done: 0, total: 0 })
     const files: string[] = []
     await walk(dir, files)
     const total = files.length
+
+    // 遍历阶段被取消
+    if (cancelFlags.get(folderId)) {
+      sendProgress({ folderId, phase: 'done', done: 0, total, message: '扫描已取消' })
+      return
+    }
 
     scanBegin(folderId)
     sendProgress({ folderId, phase: 'processing', done: 0, total })
@@ -83,6 +96,7 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
     let skipped = 0
 
     await mapLimit(files, 4, async (filePath) => {
+      if (cancelFlags.get(folderId)) return // 取消后快速跳过剩余文件
       try {
         const st = await stat(filePath)
         const mtime = Math.floor(st.mtimeMs)
@@ -129,19 +143,27 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
       }
     })
 
-    const removed = scanEnd(folderId)
-    // 扫描期间从磁盘消失的照片：同步清理其缩略图/预览缓存
-    if (removed.length > 0) removeCacheFiles(removed)
-    sendProgress({
-      folderId,
-      phase: 'done',
-      done: total,
-      total,
-      message: skipped > 0 ? `跳过 ${skipped} 张未变化的照片` : undefined
-    })
+    const cancelled = cancelFlags.get(folderId)
+
+    if (cancelled) {
+      // 取消时仍提交已扫描的文件（scanMark 已标记），不清理未出现的文件
+      sendProgress({ folderId, phase: 'done', done, total, message: '扫描已取消' })
+    } else {
+      const removed = scanEnd(folderId)
+      // 扫描期间从磁盘消失的照片：同步清理其缩略图/预览缓存
+      if (removed.length > 0) removeCacheFiles(removed)
+      sendProgress({
+        folderId,
+        phase: 'done',
+        done: total,
+        total,
+        message: skipped > 0 ? `跳过 ${skipped} 张未变化的照片` : undefined
+      })
+    }
   } catch (e) {
     sendProgress({ folderId, phase: 'error', done, total: done, message: String(e) })
   } finally {
     scanningFolders.delete(folderId)
+    cancelFlags.delete(folderId)
   }
 }

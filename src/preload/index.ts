@@ -9,6 +9,7 @@ const api: Api = {
     add: () => ipcRenderer.invoke('folders:add'),
     remove: (id: number) => ipcRenderer.invoke('folders:remove', id),
     rescan: (id: number) => ipcRenderer.invoke('folders:rescan', id),
+    cancelScan: (id: number) => ipcRenderer.invoke('folders:cancelScan', id),
     showContextMenu: (path: string, x: number, y: number) =>
       ipcRenderer.invoke('folders:context-menu', path, x, y)
   },

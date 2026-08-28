@@ -75,6 +75,7 @@ export interface Api {
     add: () => Promise<Folder | null>
     remove: (id: number) => Promise<void>
     rescan: (id: number) => Promise<void>
+    cancelScan: (id: number) => Promise<void>
     /** 右键相册：弹出系统上下文菜单（在资源管理器中打开） */
     showContextMenu: (path: string, x: number, y: number) => Promise<void>
   }

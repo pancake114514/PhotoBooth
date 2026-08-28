@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_photos_rating ON photos(rating, favorite);
 export function initDb(dbPath: string): void {
   db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
   db.exec(SCHEMA)
 }
 

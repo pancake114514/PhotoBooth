@@ -116,6 +116,26 @@
   color: var(--ev-c-text-2);
 }
 
+.folder-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 3px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.folder-cancel:hover {
+  opacity: 1;
+  background: rgba(255, 77, 109, 0.25);
+  color: #ff4d6d;
+}
+
 .folder-remove {
   position: absolute;
   top: 8px;
