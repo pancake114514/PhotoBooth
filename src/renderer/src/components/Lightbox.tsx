@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Photo } from '../../../shared/types'
 import { formatBytes, formatDateTime } from '../utils/format'
 import RatingStars from './RatingStars'
@@ -57,12 +57,23 @@ function Lightbox({
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 滚轮翻页节流（防止滚轮事件过密）
   const wheelLockRef = useRef(false)
+  // 图片元素引用（用于计算 1:1 模式下图片是否溢出舞台）
+  const imgRef = useRef<HTMLImageElement>(null)
+  // 图片加载完成标记（触发重新计算溢出状态）
+  const [imgReady, setImgReady] = useState(0)
+  // 1:1 模式下图片是否溢出舞台（溢出时可拖动平移）
+  const [overflow, setOverflow] = useState(false)
 
   /** 显示 Toast 提示（2 秒后自动消失） */
   const showToast = useCallback((msg: string): void => {
     setToast(msg)
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     toastTimerRef.current = setTimeout(() => setToast(null), 2000)
+  }, [])
+
+  // 图片加载完成后触发重新计算溢出
+  const onImgLoad = useCallback((): void => {
+    setImgReady((n) => n + 1)
   }, [])
 
   // 切图重置缩放与平移
@@ -286,27 +297,61 @@ function Lightbox({
     onClose()
   }, [isFullscreen, onClose])
 
-  // 放大后拖拽平移：仅在 zoom>1 时启用
+  // 1:1 模式下检测图片是否溢出舞台（溢出时可拖动平移）
+  useLayoutEffect(() => {
+    const check = (): void => {
+      if (fitMode !== 'actual') {
+        setOverflow(false)
+        return
+      }
+      const stage = stageRef.current
+      const img = imgRef.current
+      if (!stage || !img) {
+        setOverflow(false)
+        return
+      }
+      setOverflow(img.offsetWidth > stage.clientWidth || img.offsetHeight > stage.clientHeight)
+    }
+    const raf = requestAnimationFrame(check)
+    return () => cancelAnimationFrame(raf)
+  }, [fitMode, index, imgReady])
+
+  // 拖拽平移：zoom>1 或 1:1 模式下图片溢出舞台时启用
   /** 约束平移量，使图片边缘不越过舞台/右栏边界（内侧） */
   const clampOffset = useCallback(
     (tx: number, ty: number): { x: number; y: number } => {
       const stage = stageRef.current
       if (!stage) return { x: tx, y: ty }
-      const { width, height } = stage.getBoundingClientRect()
-      if (zoom <= 1 || width === 0 || height === 0) return { x: 0, y: 0 }
-      // 图片绕 zoomOrigin 放大后的外扩量；translate 需反向补偿使边缘贴合舞台边界
+      const { width: sw, height: sh } = stage.getBoundingClientRect()
+
+      if (fitMode === 'actual') {
+        // 1:1 模式：图片按原始像素渲染，溢出部分可拖动
+        const img = imgRef.current
+        const iw = (img?.offsetWidth ?? 0) * zoom
+        const ih = (img?.offsetHeight ?? 0) * zoom
+        const overflowX = Math.max(0, (iw - sw) / 2)
+        const overflowY = Math.max(0, (ih - sh) / 2)
+        if (overflowX === 0 && overflowY === 0) return { x: 0, y: 0 }
+        return {
+          x: Math.max(-overflowX, Math.min(overflowX, tx)),
+          y: Math.max(-overflowY, Math.min(overflowY, ty))
+        }
+      }
+
+      // 适应窗口模式：仅在 zoom>1 时允许平移
+      if (zoom <= 1 || sw === 0 || sh === 0) return { x: 0, y: 0 }
       const originX = zoomOrigin.x / 100
       const originY = zoomOrigin.y / 100
-      const left = (zoom - 1) * originX * width
-      const right = (zoom - 1) * (1 - originX) * width
-      const top = (zoom - 1) * originY * height
-      const bottom = (zoom - 1) * (1 - originY) * height
+      const left = (zoom - 1) * originX * sw
+      const right = (zoom - 1) * (1 - originX) * sw
+      const top = (zoom - 1) * originY * sh
+      const bottom = (zoom - 1) * (1 - originY) * sh
       return {
         x: Math.max(-left, Math.min(right, tx)),
         y: Math.max(-top, Math.min(bottom, ty))
       }
     },
-    [zoom, zoomOrigin]
+    [zoom, zoomOrigin, fitMode]
   )
 
   // 缩放或缩放中心变化时，把当前平移约束回合法范围（放大保持、退到1倍归零）
@@ -320,7 +365,7 @@ function Lightbox({
 
   if (!photo) return <></>
 
-  const isPanning = zoom > 1
+  const isPanning = zoom > 1 || overflow
   const onMouseDown = (e: React.MouseEvent): void => {
     if (!isPanning || e.button !== 0) return
     e.preventDefault()
@@ -382,11 +427,13 @@ function Lightbox({
         onDoubleClick={onDoubleClick}
       >
         <img
+          ref={imgRef}
           className={`lightbox-img${fitMode === 'actual' ? ' actual-size' : ''}`}
           src={window.api.photoUrl(photo.path)}
           alt={photo.filename}
           style={imgStyle}
           onClick={(e) => e.stopPropagation()}
+          onLoad={onImgLoad}
           draggable={false}
         />
         <button
