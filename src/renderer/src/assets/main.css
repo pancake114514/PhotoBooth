@@ -444,7 +444,7 @@
 
 .lightbox-img {
   max-width: 100%;
-  max-height: 88vh;
+  max-height: calc(100vh - 48px);
   object-fit: contain;
   border-radius: 4px;
   transform-origin: center center;
@@ -651,6 +651,111 @@
 
 .lb-close:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============ Lightbox 底部工具栏 ============ */
+.lb-toolbar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(30, 30, 30, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.lb-tool-btn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  line-height: 1;
+  min-width: 34px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.lb-tool-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.lb-tool-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.lb-tool-btn.on {
+  background: rgba(158, 203, 255, 0.18);
+  color: #9ecbff;
+}
+
+.lb-tool-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 2px;
+}
+
+/* ============ 幻灯片进度条 ============ */
+.slideshow-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 10;
+}
+
+.slideshow-progress-bar {
+  height: 100%;
+  background: #9ecbff;
+  animation: slideshow-fill 3s linear;
+}
+
+@keyframes slideshow-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* ============ Lightbox Toast ============ */
+.lb-toast {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ============ 全屏模式 ============ */
+.lightbox.fullscreen .lightbox-side {
+  display: none;
+}
+
+/* 原始尺寸模式 */
+.lightbox-img.actual-size {
+  object-fit: unset;
+  image-rendering: auto;
 }
 
 /* ============ 视图切换 ============ */

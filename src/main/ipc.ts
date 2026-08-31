@@ -1,5 +1,5 @@
 import { basename } from 'path'
-import { BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
+import { BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import * as db from './db'
 import { scanFolder, cancelScan } from './scanner'
 import { removeCacheFiles } from './thumbs'
@@ -103,5 +103,32 @@ export function registerIpc(): void {
       x: Math.round(x),
       y: Math.round(y)
     })
+  })
+
+  // 复制图片到系统剪贴板
+  ipcMain.handle('clipboard:copyImage', async (_e, path: string) => {
+    try {
+      const img = nativeImage.createFromPath(path)
+      if (img.isEmpty()) {
+        throw new Error('无法读取图片文件')
+      }
+      clipboard.writeImage(img)
+    } catch (err) {
+      console.error('[copyImage]', path, err)
+    }
+  })
+
+  // 复制文本到系统剪贴板
+  ipcMain.handle('clipboard:copyText', (_e, text: string) => {
+    clipboard.writeText(text)
+  })
+
+  // 切换窗口全屏
+  ipcMain.handle('window:toggleFullscreen', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return false
+    const newState = !win.isFullScreen()
+    win.setFullScreen(newState)
+    return newState
   })
 }

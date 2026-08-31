@@ -27,6 +27,9 @@ const api: Api = {
   },
   thumbUrl: (thumbPath: string) => `thumbs://thumb/${thumbPath}`,
   photoUrl: (path: string) => `photo://local/?p=${encodeURIComponent(path)}`,
+  copyImage: (path: string) => ipcRenderer.invoke('clipboard:copyImage', path),
+  copyText: (text: string) => ipcRenderer.invoke('clipboard:copyText', text),
+  toggleFullscreen: () => ipcRenderer.invoke('window:toggleFullscreen'),
   onScanProgress: (cb) => {
     const listener = (_e: Electron.IpcRendererEvent, p: Parameters<typeof cb>[0]): void => cb(p)
     ipcRenderer.on('scan:progress', listener)
