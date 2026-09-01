@@ -225,6 +225,11 @@ function Lightbox({
           // 切换适应/原始
           cycleFitMode()
           break
+        case 'Tab':
+          // 切换 EXIF 信息面板
+          e.preventDefault()
+          setSideOpen((s) => !s)
+          break
         default:
           // Ctrl+C 复制图片
           if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection()?.toString()) {
@@ -563,7 +568,7 @@ function Lightbox({
             </span>
             <button
               className="btn-icon side-collapse"
-              title="收起信息栏"
+              title="收起信息栏 (Tab)"
               onClick={() => setSideOpen(false)}
             >
               »
@@ -628,7 +633,7 @@ function Lightbox({
       ) : (
         <button
           className="btn side-toggle"
-          title="展开信息栏"
+          title="展开信息栏 (Tab)"
           onClick={(e) => {
             e.stopPropagation()
             setSideOpen(true)
