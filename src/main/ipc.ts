@@ -1,8 +1,33 @@
-import { basename } from 'path'
+import { basename, extname } from 'path'
 import { BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
+import type { NativeImage } from 'electron'
 import * as db from './db'
 import { scanFolder, cancelScan } from './scanner'
 import { removeCacheFiles } from './thumbs'
+
+/**
+ * 读取图片并应用 EXIF 方向，产出可写入剪贴板的 nativeImage。
+ * 用 sharp .rotate() 自动应用 Orientation 标签（否则手机竖拍图方向错误），
+ * 转 PNG 后给 nativeImage；sharp 无法解码的格式（如 HEIC）回退到原生读取。
+ */
+async function createOrientedImage(path: string): Promise<NativeImage | null> {
+  const isSharpFormat = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.bmp', '.tif', '.tiff'].includes(
+    extname(path).toLowerCase()
+  )
+  try {
+    if (isSharpFormat) {
+      const sharp = (await import('sharp')).default
+      const png = await sharp(path, { failOn: 'none' }).rotate().png().toBuffer()
+      const img = nativeImage.createFromBuffer(png)
+      if (!img.isEmpty()) return img
+    }
+    // 回退：sharp 不支持的格式（HEIC 等）或转码失败，直接用原生读取（方向可能未应用）
+    const img = nativeImage.createFromPath(path)
+    return img.isEmpty() ? null : img
+  } catch {
+    return null
+  }
+}
 
 export function registerIpc(): void {
   ipcMain.handle('folders:list', () => db.listFolders())
@@ -94,6 +119,27 @@ export function registerIpc(): void {
             if (err) console.error('[open-photo]', path, err)
           })
         }
+      },
+      {
+        type: 'separator'
+      },
+      {
+        label: '复制图片',
+        click: () => {
+          void createOrientedImage(path).then((img) => {
+            if (!img) {
+              console.error('[copy-image-menu] 无法读取图片文件', path)
+            } else {
+              clipboard.writeImage(img)
+            }
+          })
+        }
+      },
+      {
+        label: '复制文件路径',
+        click: () => {
+          clipboard.writeText(path)
+        }
       }
     ])
     menu.popup({
@@ -103,11 +149,11 @@ export function registerIpc(): void {
     })
   })
 
-  // 复制图片到系统剪贴板
+  // 复制图片到系统剪贴板（应用 EXIF 方向）
   ipcMain.handle('clipboard:copyImage', async (_e, path: string) => {
     try {
-      const img = nativeImage.createFromPath(path)
-      if (img.isEmpty()) {
+      const img = await createOrientedImage(path)
+      if (!img) {
         throw new Error('无法读取图片文件')
       }
       clipboard.writeImage(img)

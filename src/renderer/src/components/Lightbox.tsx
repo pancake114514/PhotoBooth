@@ -432,6 +432,11 @@ function Lightbox({
           onClick={(e) => e.stopPropagation()}
           onLoad={onImgLoad}
           draggable={false}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            void window.api.photos.showContextMenu(photo.path, e.clientX, e.clientY)
+          }}
         />
         <button
           className="lb-close"
