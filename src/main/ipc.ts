@@ -127,10 +127,10 @@ export function registerIpc(): void {
         label: '复制图片',
         click: () => {
           void createOrientedImage(path).then((img) => {
-            if (!img) {
-              console.error('[copy-image-menu] 无法读取图片文件', path)
-            } else {
+            if (img) {
               clipboard.writeImage(img)
+            } else {
+              dialog.showErrorBox('复制图片失败', '无法读取图片文件：\n' + path)
             }
           })
         }
@@ -149,7 +149,7 @@ export function registerIpc(): void {
     })
   })
 
-  // 复制图片到系统剪贴板（应用 EXIF 方向）
+  // 复制图片到系统剪贴板（应用 EXIF 方向）；失败不抛错，返回 ok=false 由渲染层提示
   ipcMain.handle('clipboard:copyImage', async (_e, path: string) => {
     try {
       const img = await createOrientedImage(path)
@@ -157,14 +157,11 @@ export function registerIpc(): void {
         throw new Error('无法读取图片文件')
       }
       clipboard.writeImage(img)
+      return { ok: true }
     } catch (err) {
       console.error('[copyImage]', path, err)
+      return { ok: false }
     }
-  })
-
-  // 复制文本到系统剪贴板
-  ipcMain.handle('clipboard:copyText', (_e, text: string) => {
-    clipboard.writeText(text)
   })
 
   // 切换窗口全屏

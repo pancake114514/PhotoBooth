@@ -17,8 +17,6 @@
   flex-direction: column;
   background: var(--ev-c-black-soft);
   border-right: 1px solid var(--ev-c-gray-3);
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 .sidebar-header {
@@ -69,7 +67,6 @@
   font-size: 18px;
   color: var(--ev-c-text-2);
   line-height: 1;
-  user-select: none;
 }
 
 .folder-list {

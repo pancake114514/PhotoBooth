@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -28,6 +28,32 @@ function createWindow(): void {
       sandbox: false
     }
   })
+
+  // 拦截刷新快捷键（所有模式）：Electron 应用内刷新页面无意义，
+  // 还会丢失界面状态（缩放/翻页位置），开发模式误触 Ctrl+R 也会导致界面闪烁
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return
+    const key = input.key.toLowerCase()
+    if (key === 'f5' || (input.control && key === 'r')) {
+      event.preventDefault()
+      return
+    }
+    // 生产模式：额外拦截 DevTools 快捷键（开发模式保留，便于调试）
+    if (!is.dev) {
+      const isDevTools =
+        key === 'f12' ||
+        ((input.control || input.alt) && input.shift && key === 'i') ||
+        (input.control && input.shift && (key === 'j' || key === 'c'))
+      if (isDevTools) {
+        event.preventDefault()
+      }
+    }
+  })
+
+  // 生产模式：移除默认菜单（含 DevTools 入口）
+  if (!is.dev) {
+    Menu.setApplicationMenu(null)
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()

@@ -96,10 +96,8 @@ export interface Api {
   thumbUrl: (thumbPath: string) => string
   /** 照片绝对路径 → 协议 URL */
   photoUrl: (path: string) => string
-  /** 复制图片到系统剪贴板 */
-  copyImage: (path: string) => Promise<void>
-  /** 复制文本到系统剪贴板 */
-  copyText: (text: string) => Promise<void>
+  /** 复制图片到系统剪贴板；ok=false 表示读取/复制失败 */
+  copyImage: (path: string) => Promise<{ ok: boolean }>
   /** 切换窗口全屏模式 */
   toggleFullscreen: () => Promise<boolean>
   onScanProgress: (cb: (p: ScanProgress) => void) => () => void

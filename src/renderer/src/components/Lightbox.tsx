@@ -163,15 +163,12 @@ function Lightbox({
   // ===== 复制图片到剪贴板 =====
   const copyImage = useCallback(async (): Promise<void> => {
     if (!photo) return
-    await window.api.copyImage(photo.path)
-    showToast('已复制图片到剪贴板')
-  }, [photo, showToast])
-
-  // ===== 复制文件路径到剪贴板 =====
-  const copyPath = useCallback(async (): Promise<void> => {
-    if (!photo) return
-    await window.api.copyText(photo.path)
-    showToast('已复制文件路径')
+    try {
+      const res = await window.api.copyImage(photo.path)
+      showToast(res.ok ? '已复制图片到剪贴板' : '复制图片失败')
+    } catch {
+      showToast('复制图片失败')
+    }
   }, [photo, showToast])
 
   // ===== 键盘事件 =====
@@ -527,17 +524,6 @@ function Lightbox({
             }}
           >
             1:1
-          </button>
-          <span className="lb-tool-sep" />
-          <button
-            className="lb-tool-btn"
-            title="复制图片 (Ctrl+C)"
-            onClick={() => void copyImage()}
-          >
-            ⧉
-          </button>
-          <button className="lb-tool-btn" title="复制文件路径" onClick={() => void copyPath()}>
-            路径
           </button>
           <span className="lb-tool-sep" />
           <button
