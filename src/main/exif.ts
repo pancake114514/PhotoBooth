@@ -129,7 +129,7 @@ async function parseExifInternal(filePath: string): Promise<ParsedExif> {
       focalLength: toInt(out.FocalLength),
       gpsLat: gpsLat === null && gpsLng === null ? null : gpsLat,
       gpsLng: gpsLat === null && gpsLng === null ? null : gpsLng,
-      gpsAlt: alt === null ? null : (out.GPSAltitudeRef === 1 ? -alt : alt)
+      gpsAlt: alt === null ? null : out.GPSAltitudeRef === 1 ? -alt : alt
     }
   } catch {
     return { ...EMPTY }

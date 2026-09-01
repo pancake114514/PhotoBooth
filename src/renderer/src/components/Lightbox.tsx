@@ -375,10 +375,7 @@ function Lightbox({
   const onMouseMove = (e: React.MouseEvent): void => {
     const d = dragStartRef.current
     if (!d) return
-    const v = clampOffset(
-      d.ox + (e.clientX - d.px),
-      d.oy + (e.clientY - d.py)
-    )
+    const v = clampOffset(d.ox + (e.clientX - d.px), d.oy + (e.clientY - d.py))
     setOffset(v)
   }
   const onMouseUp = (): void => {
@@ -529,11 +526,7 @@ function Lightbox({
           >
             ⧉
           </button>
-          <button
-            className="lb-tool-btn"
-            title="复制文件路径"
-            onClick={() => void copyPath()}
-          >
+          <button className="lb-tool-btn" title="复制文件路径" onClick={() => void copyPath()}>
             路径
           </button>
           <span className="lb-tool-sep" />
@@ -563,7 +556,11 @@ function Lightbox({
             <span className="side-name" title={photo.path}>
               {photo.filename}
             </span>
-            <button className="btn-icon side-collapse" title="收起信息栏" onClick={() => setSideOpen(false)}>
+            <button
+              className="btn-icon side-collapse"
+              title="收起信息栏"
+              onClick={() => setSideOpen(false)}
+            >
               »
             </button>
           </div>

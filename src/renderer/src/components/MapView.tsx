@@ -157,9 +157,7 @@ function MapView({ photos, total, onOpenPhoto }: MapViewProps): React.JSX.Elemen
           </button>
         ))}
       </div>
-      {photos.length === 0 && (
-        <div className="map-note">该文件夹暂无带位置信息的照片</div>
-      )}
+      {photos.length === 0 && <div className="map-note">该文件夹暂无带位置信息的照片</div>}
       {photos.length > 0 && noGps > 0 && (
         <div className="map-note">{noGps} 张照片没有位置信息，未在地图上显示</div>
       )}

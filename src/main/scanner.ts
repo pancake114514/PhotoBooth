@@ -52,7 +52,11 @@ async function walk(dir: string, out: string[]): Promise<void> {
 }
 
 /** 并发池：最多 limit 个任务同时执行 */
-async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+async function mapLimit<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>
+): Promise<void> {
   let index = 0
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (index < items.length) {

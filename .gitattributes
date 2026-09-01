@@ -1,0 +1,10 @@
+# 统一源文件行尾为 LF（prettier 默认），避免 CRLF 反复转换
+* text=auto eol=lf
+
+# 二进制资源不做行尾处理
+*.png binary
+*.jpg binary
+*.ico binary
+*.icns binary
+*.gif binary
+*.webp binary

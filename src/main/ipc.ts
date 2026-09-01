@@ -69,9 +69,7 @@ export function registerIpc(): void {
     db.listPhotos(folderId, offset, limit, opts)
   )
 
-  ipcMain.handle('photos:gpsList', (_e, folderId: number, opts) =>
-    db.listGpsPhotos(folderId, opts)
-  )
+  ipcMain.handle('photos:gpsList', (_e, folderId: number, opts) => db.listGpsPhotos(folderId, opts))
 
   ipcMain.handle('photos:setRating', (_e, id: number, rating: number) => {
     db.updateRating(id, rating)

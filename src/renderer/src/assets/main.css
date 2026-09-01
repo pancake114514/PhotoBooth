@@ -236,9 +236,12 @@
 .select {
   appearance: none;
   -webkit-appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ev-c-text-2) 50%),
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ev-c-text-2) 50%),
     linear-gradient(135deg, var(--ev-c-text-2) 50%, transparent 50%);
-  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+  background-position:
+    calc(100% - 14px) 55%,
+    calc(100% - 9px) 55%;
   background-size: 5px 5px;
   background-repeat: no-repeat;
   padding-right: 26px;
@@ -682,7 +685,9 @@
   padding: 0 6px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .lb-tool-btn:hover:not(:disabled) {
@@ -725,8 +730,12 @@
 }
 
 @keyframes slideshow-fill {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 /* ============ Lightbox Toast ============ */

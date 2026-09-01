@@ -19,53 +19,53 @@ AIGC:
 
 ## 一、功能总览
 
-| 模块 | 功能项 | 简述 |
-|------|--------|------|
-| 文件夹管理 | 多文件夹管理 | 侧边栏添加 / 移除 / 切换 / 重新扫描多个照片文件夹 |
-| 文件夹管理 | 侧边栏折叠 | 侧边栏可折叠为窄条、拖动分隔条调整宽度 |
-| 文件夹管理 | 右键菜单 | 文件夹右键支持"在资源管理器中打开" |
-| 照片扫描 | 递归扫描 | 自动遍历子目录，识别 11 种主流图像格式 |
-| 照片扫描 | 增量扫描 | 基于文件 mtime + size 比对，跳过未变化文件 |
-| 照片扫描 | 并发处理 | 4 线程并发池处理 EXIF + 缩略图生成 |
-| 照片扫描 | 进度推送 | 实时推送扫描进度（遍历中 / 处理中 / 完成 / 错误） |
-| 照片扫描 | 自动清理 | 扫描结束后自动删除已从磁盘移除的照片记录及缓存 |
-| 照片扫描 | 防重复 | 同一文件夹不会同时触发两次扫描 |
-| 缩略图 | 自动生成 | sharp 生成 512px JPEG 缩略图，质量 82 |
-| 缩略图 | HEIC 解码 | heic-decode 解码 HEIC/HEIF 后 sharp 压缩为 JPEG |
-| 缩略图 | 缓存重建 | 缩略图缓存缺失时按需自动重建，避免裂图 |
-| 缩略图 | 预览缓存 | HEIC 大图预览转全分辨率 JPEG，LRU 清理（上限 200MB） |
-| 缩略图 | 孤儿清理 | 照片删除 / 文件夹移除时清理对应缓存文件 |
-| EXIF 解析 | 拍摄信息 | 拍摄时间、设备厂商、型号、镜头型号 |
-| EXIF 解析 | 拍摄参数 | 焦距、光圈、快门速度、ISO |
-| EXIF 解析 | GPS 信息 | 经纬度（DMS→十进制）、海拔，含方向修正 |
-| EXIF 解析 | 日期兼容 | 兼容 Date 对象、ExifDateTime、字符串格式 |
-| 照片网格 | 无限滚动 | IntersectionObserver 懒加载，400px 预加载阈值 |
-| 照片网格 | 懒加载缩略图 | `<img loading="lazy">` + 缩略图协议加载 |
-| 照片网格 | 角标显示 | 收藏 ♥ 角标 + 星级 ★ 角标 |
-| 照片网格 | 右键菜单 | 照片右键支持"在资源管理器中打开""用系统图片浏览器打开" |
-| 大图预览 | 缩放浏览 | Ctrl + 滚轮缩放（1~8 倍），缩放中心跟随鼠标 |
-| 大图预览 | 拖拽平移 | 放大后鼠标拖拽平移，自动约束边界 |
-| 大图预览 | 键盘导航 | ← / → 翻页，Esc 关闭 |
-| 大图预览 | 跨页加载 | 翻到已加载末尾时自动请求下一页 |
-| 大图预览 | EXIF 详情栏 | 右侧信息面板（可收起），展示完整拍摄参数 |
-| 大图预览 | 评分收藏 | 大图预览中直接设置星级与收藏 |
-| 地图视图 | 位置标注 | 带 GPS 照片以圆形缩略图 marker 展示 |
-| 地图视图 | 聚簇显示 | markercluster 密集时自动聚合，分块加载 |
-| 地图视图 | 底图切换 | 高德 / 高德卫星 / OSM / ArcGIS 四种底图 |
-| 地图视图 | 坐标纠偏 | 国内底图自动 WGS-84 → GCJ-02 火星坐标转换 |
-| 地图视图 | 自适应视野 | 照片变化时自动 fitBounds，切换底图保持视角 |
-| 地图视图 | 点击预览 | 点击 marker 直接打开照片大图 |
-| 地图视图 | 无 GPS 提示 | 显示无位置信息照片数量 |
-| 过滤排序 | 过滤 | 全部 / 仅收藏 / ★≥1 / ★★★≥3 / ★★★★≥4 |
-| 过滤排序 | 排序 | 最新优先 / 最旧优先 / 按文件名 |
-| 搜索 | 文件名搜索 | 按文件名 / 路径关键字模糊匹配，300ms 防抖 |
-| 星级收藏 | 星级评分 | 0-5 星评分，点击当前星级可清除 |
-| 星级收藏 | 收藏标记 | 收藏 / 取消收藏，网格与大图均可操作 |
-| 星级收藏 | 数据持久 | 评分 / 收藏存 SQLite，重新扫描不覆盖 |
-| 安全机制 | 上下文隔离 | contextIsolation + contextBridge，渲染进程不接触 Node.js |
-| 安全机制 | CSP 策略 | 限制脚本 / 样式 / 图片来源，仅允许自定义协议和指定瓦片域名 |
-| 安全机制 | 路径消毒 | 自定义协议使用 basename 防目录穿越，校验绝对路径 |
-| 安全机制 | 数据安全 | 移除文件夹仅删索引，绝不删除磁盘照片文件 |
+| 模块       | 功能项       | 简述                                                       |
+| ---------- | ------------ | ---------------------------------------------------------- |
+| 文件夹管理 | 多文件夹管理 | 侧边栏添加 / 移除 / 切换 / 重新扫描多个照片文件夹          |
+| 文件夹管理 | 侧边栏折叠   | 侧边栏可折叠为窄条、拖动分隔条调整宽度                     |
+| 文件夹管理 | 右键菜单     | 文件夹右键支持"在资源管理器中打开"                         |
+| 照片扫描   | 递归扫描     | 自动遍历子目录，识别 11 种主流图像格式                     |
+| 照片扫描   | 增量扫描     | 基于文件 mtime + size 比对，跳过未变化文件                 |
+| 照片扫描   | 并发处理     | 4 线程并发池处理 EXIF + 缩略图生成                         |
+| 照片扫描   | 进度推送     | 实时推送扫描进度（遍历中 / 处理中 / 完成 / 错误）          |
+| 照片扫描   | 自动清理     | 扫描结束后自动删除已从磁盘移除的照片记录及缓存             |
+| 照片扫描   | 防重复       | 同一文件夹不会同时触发两次扫描                             |
+| 缩略图     | 自动生成     | sharp 生成 512px JPEG 缩略图，质量 82                      |
+| 缩略图     | HEIC 解码    | heic-decode 解码 HEIC/HEIF 后 sharp 压缩为 JPEG            |
+| 缩略图     | 缓存重建     | 缩略图缓存缺失时按需自动重建，避免裂图                     |
+| 缩略图     | 预览缓存     | HEIC 大图预览转全分辨率 JPEG，LRU 清理（上限 200MB）       |
+| 缩略图     | 孤儿清理     | 照片删除 / 文件夹移除时清理对应缓存文件                    |
+| EXIF 解析  | 拍摄信息     | 拍摄时间、设备厂商、型号、镜头型号                         |
+| EXIF 解析  | 拍摄参数     | 焦距、光圈、快门速度、ISO                                  |
+| EXIF 解析  | GPS 信息     | 经纬度（DMS→十进制）、海拔，含方向修正                     |
+| EXIF 解析  | 日期兼容     | 兼容 Date 对象、ExifDateTime、字符串格式                   |
+| 照片网格   | 无限滚动     | IntersectionObserver 懒加载，400px 预加载阈值              |
+| 照片网格   | 懒加载缩略图 | `<img loading="lazy">` + 缩略图协议加载                    |
+| 照片网格   | 角标显示     | 收藏 ♥ 角标 + 星级 ★ 角标                                  |
+| 照片网格   | 右键菜单     | 照片右键支持"在资源管理器中打开""用系统图片浏览器打开"     |
+| 大图预览   | 缩放浏览     | Ctrl + 滚轮缩放（1~8 倍），缩放中心跟随鼠标                |
+| 大图预览   | 拖拽平移     | 放大后鼠标拖拽平移，自动约束边界                           |
+| 大图预览   | 键盘导航     | ← / → 翻页，Esc 关闭                                       |
+| 大图预览   | 跨页加载     | 翻到已加载末尾时自动请求下一页                             |
+| 大图预览   | EXIF 详情栏  | 右侧信息面板（可收起），展示完整拍摄参数                   |
+| 大图预览   | 评分收藏     | 大图预览中直接设置星级与收藏                               |
+| 地图视图   | 位置标注     | 带 GPS 照片以圆形缩略图 marker 展示                        |
+| 地图视图   | 聚簇显示     | markercluster 密集时自动聚合，分块加载                     |
+| 地图视图   | 底图切换     | 高德 / 高德卫星 / OSM / ArcGIS 四种底图                    |
+| 地图视图   | 坐标纠偏     | 国内底图自动 WGS-84 → GCJ-02 火星坐标转换                  |
+| 地图视图   | 自适应视野   | 照片变化时自动 fitBounds，切换底图保持视角                 |
+| 地图视图   | 点击预览     | 点击 marker 直接打开照片大图                               |
+| 地图视图   | 无 GPS 提示  | 显示无位置信息照片数量                                     |
+| 过滤排序   | 过滤         | 全部 / 仅收藏 / ★≥1 / ★★★≥3 / ★★★★≥4                       |
+| 过滤排序   | 排序         | 最新优先 / 最旧优先 / 按文件名                             |
+| 搜索       | 文件名搜索   | 按文件名 / 路径关键字模糊匹配，300ms 防抖                  |
+| 星级收藏   | 星级评分     | 0-5 星评分，点击当前星级可清除                             |
+| 星级收藏   | 收藏标记     | 收藏 / 取消收藏，网格与大图均可操作                        |
+| 星级收藏   | 数据持久     | 评分 / 收藏存 SQLite，重新扫描不覆盖                       |
+| 安全机制   | 上下文隔离   | contextIsolation + contextBridge，渲染进程不接触 Node.js   |
+| 安全机制   | CSP 策略     | 限制脚本 / 样式 / 图片来源，仅允许自定义协议和指定瓦片域名 |
+| 安全机制   | 路径消毒     | 自定义协议使用 basename 防目录穿越，校验绝对路径           |
+| 安全机制   | 数据安全     | 移除文件夹仅删索引，绝不删除磁盘照片文件                   |
 
 ---
 
@@ -148,10 +148,10 @@ AIGC:
 
 **协议注册**（`protocols.ts`）
 
-| 协议 | 用途 | 安全措施 |
-|------|------|----------|
-| `thumbs://thumb/<缓存名>` | 加载缩略图 | basename 消毒防目录穿越；缓存缺失自动重建 |
-| `photo://local/?p=<路径>` | 加载原图 | 校验绝对路径 + 文件存在；HEIC 自动转 JPEG 预览 |
+| 协议                      | 用途       | 安全措施                                       |
+| ------------------------- | ---------- | ---------------------------------------------- |
+| `thumbs://thumb/<缓存名>` | 加载缩略图 | basename 消毒防目录穿越；缓存缺失自动重建      |
+| `photo://local/?p=<路径>` | 加载原图   | 校验绝对路径 + 文件存在；HEIC 自动转 JPEG 预览 |
 
 - 缩略图缓存缺失时：通过 `findPathByThumbPath` 反查原文件路径 → 重新生成缩略图 → 返回
 - HEIC 原图加载：调用 `getPreviewPath` 获取预览缓存（自动转码）；转码失败回退原图
@@ -193,12 +193,12 @@ AIGC:
 
 - 底图列表：
 
-  | 底图 | 来源 | 坐标系 | 说明 |
-  |------|------|--------|------|
-  | 高德 | webrd0{1-4}.is.autonavi.com | GCJ-02 | 默认底图，矢量地图 |
-  | 卫星 | webst0{1-4}.is.autonavi.com | GCJ-02 | 高德卫星影像 |
-  | OSM | tile.openstreetmap.org | WGS-84 | OpenStreetMap 矢量 |
-  | ArcGIS | server.arcgisonline.com | WGS-84 | ESRI 世界街道图 |
+  | 底图   | 来源                        | 坐标系 | 说明               |
+  | ------ | --------------------------- | ------ | ------------------ |
+  | 高德   | webrd0{1-4}.is.autonavi.com | GCJ-02 | 默认底图，矢量地图 |
+  | 卫星   | webst0{1-4}.is.autonavi.com | GCJ-02 | 高德卫星影像       |
+  | OSM    | tile.openstreetmap.org      | WGS-84 | OpenStreetMap 矢量 |
+  | ArcGIS | server.arcgisonline.com     | WGS-84 | ESRI 世界街道图    |
 
 - 坐标纠偏：使用 GCJ-02 底图时，照片 WGS-84 坐标自动转换为火星坐标（`coord.ts`）
 - 境外坐标：中国大陆境外坐标不偏移，直接使用 WGS-84
@@ -213,20 +213,20 @@ AIGC:
 
 **过滤**（5 种）
 
-| 过滤项 | 条件 |
-|--------|------|
-| 全部 | 无过滤 |
-| ♥ 收藏 | `favorite = 1` |
-| ★ ≥ 1 | `rating >= 1` |
-| ★★★ ≥ 3 | `rating >= 3` |
-| ★★★★ ≥ 4 | `rating >= 4` |
+| 过滤项   | 条件           |
+| -------- | -------------- |
+| 全部     | 无过滤         |
+| ♥ 收藏   | `favorite = 1` |
+| ★ ≥ 1    | `rating >= 1`  |
+| ★★★ ≥ 3  | `rating >= 3`  |
+| ★★★★ ≥ 4 | `rating >= 4`  |
 
 **排序**（3 种）
 
-| 排序项 | SQL |
-|--------|-----|
-| 最新优先 | `taken_at DESC, id DESC` |
-| 最旧优先 | `taken_at ASC, id ASC` |
+| 排序项   | SQL                                   |
+| -------- | ------------------------------------- |
+| 最新优先 | `taken_at DESC, id DESC`              |
+| 最旧优先 | `taken_at ASC, id ASC`                |
 | 按文件名 | `filename COLLATE NOCASE ASC, id ASC` |
 
 **搜索**
@@ -263,46 +263,46 @@ AIGC:
 
 **folders 表**
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| path | TEXT UNIQUE | 文件夹绝对路径 |
-| name | TEXT | 文件夹名称 |
-| added_at | INTEGER | 添加时间戳 |
+| 字段     | 类型        | 说明           |
+| -------- | ----------- | -------------- |
+| id       | INTEGER PK  | 自增主键       |
+| path     | TEXT UNIQUE | 文件夹绝对路径 |
+| name     | TEXT        | 文件夹名称     |
+| added_at | INTEGER     | 添加时间戳     |
 
 **photos 表**
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| folder_id | INTEGER FK | 关联 folders(id)，级联删除 |
-| path | TEXT UNIQUE | 照片绝对路径 |
-| filename | TEXT | 文件名 |
-| size | INTEGER | 文件大小（字节） |
-| mtime | INTEGER | 修改时间戳 |
-| width / height | INTEGER | 图像尺寸 |
-| format | TEXT | 格式（如 jpg、png、heic） |
-| thumb_path | TEXT | 缩略图缓存文件名 |
-| taken_at | INTEGER | 拍摄时间戳 |
-| make / model / lens | TEXT | 设备信息 |
-| fnumber | REAL | 光圈值 |
-| iso | INTEGER | ISO 感光度 |
-| exposure | TEXT | 快门速度（如 1/125s） |
-| focal_length | INTEGER | 焦距（mm） |
-| gps_lat / gps_lng | REAL | GPS 经纬度（十进制） |
-| gps_alt | REAL | GPS 海拔（米） |
-| rating | INTEGER | 星级 0-5（默认 0） |
-| favorite | INTEGER | 收藏 0/1（默认 0） |
-| created_at | INTEGER | 入库时间戳 |
+| 字段                | 类型        | 说明                       |
+| ------------------- | ----------- | -------------------------- |
+| id                  | INTEGER PK  | 自增主键                   |
+| folder_id           | INTEGER FK  | 关联 folders(id)，级联删除 |
+| path                | TEXT UNIQUE | 照片绝对路径               |
+| filename            | TEXT        | 文件名                     |
+| size                | INTEGER     | 文件大小（字节）           |
+| mtime               | INTEGER     | 修改时间戳                 |
+| width / height      | INTEGER     | 图像尺寸                   |
+| format              | TEXT        | 格式（如 jpg、png、heic）  |
+| thumb_path          | TEXT        | 缩略图缓存文件名           |
+| taken_at            | INTEGER     | 拍摄时间戳                 |
+| make / model / lens | TEXT        | 设备信息                   |
+| fnumber             | REAL        | 光圈值                     |
+| iso                 | INTEGER     | ISO 感光度                 |
+| exposure            | TEXT        | 快门速度（如 1/125s）      |
+| focal_length        | INTEGER     | 焦距（mm）                 |
+| gps_lat / gps_lng   | REAL        | GPS 经纬度（十进制）       |
+| gps_alt             | REAL        | GPS 海拔（米）             |
+| rating              | INTEGER     | 星级 0-5（默认 0）         |
+| favorite            | INTEGER     | 收藏 0/1（默认 0）         |
+| created_at          | INTEGER     | 入库时间戳                 |
 
 **索引**
 
-| 索引名 | 字段 | 用途 |
-|--------|------|------|
-| idx_photos_folder | folder_id | 按文件夹查询照片 |
-| idx_photos_taken | taken_at | 按拍摄时间排序 |
-| idx_photos_gps | gps_lat, gps_lng | 地图视图查询 |
-| idx_photos_rating | rating, favorite | 过滤查询 |
+| 索引名            | 字段             | 用途             |
+| ----------------- | ---------------- | ---------------- |
+| idx_photos_folder | folder_id        | 按文件夹查询照片 |
+| idx_photos_taken  | taken_at         | 按拍摄时间排序   |
+| idx_photos_gps    | gps_lat, gps_lng | 地图视图查询     |
+| idx_photos_rating | rating, favorite | 过滤查询         |
 
 ### 2.12 安全机制
 
@@ -347,29 +347,29 @@ preload (ipcRenderer.invoke / ipcRenderer.on)
 
 **IPC 通道列表**
 
-| 通道 | 方向 | 说明 |
-|------|------|------|
-| `folders:list` | invoke | 获取所有文件夹列表（含照片计数） |
-| `folders:add` | invoke | 弹出目录选择对话框，添加文件夹并自动扫描 |
-| `folders:remove` | invoke | 移除文件夹，清理照片记录和缓存 |
-| `folders:rescan` | invoke | 重新扫描指定文件夹 |
-| `folders:context-menu` | invoke | 弹出文件夹右键菜单 |
-| `photos:list` | invoke | 分页查询照片列表（支持过滤 / 排序 / 搜索） |
-| `photos:gpsList` | invoke | 查询带 GPS 的照片列表（地图视图） |
-| `photos:setRating` | invoke | 设置照片星级 |
-| `photos:setFavorite` | invoke | 设置照片收藏状态 |
-| `photos:context-menu` | invoke | 弹出照片右键菜单 |
-| `scan:progress` | send (主→渲染) | 推送扫描进度更新 |
+| 通道                   | 方向           | 说明                                       |
+| ---------------------- | -------------- | ------------------------------------------ |
+| `folders:list`         | invoke         | 获取所有文件夹列表（含照片计数）           |
+| `folders:add`          | invoke         | 弹出目录选择对话框，添加文件夹并自动扫描   |
+| `folders:remove`       | invoke         | 移除文件夹，清理照片记录和缓存             |
+| `folders:rescan`       | invoke         | 重新扫描指定文件夹                         |
+| `folders:context-menu` | invoke         | 弹出文件夹右键菜单                         |
+| `photos:list`          | invoke         | 分页查询照片列表（支持过滤 / 排序 / 搜索） |
+| `photos:gpsList`       | invoke         | 查询带 GPS 的照片列表（地图视图）          |
+| `photos:setRating`     | invoke         | 设置照片星级                               |
+| `photos:setFavorite`   | invoke         | 设置照片收藏状态                           |
+| `photos:context-menu`  | invoke         | 弹出照片右键菜单                           |
+| `scan:progress`        | send (主→渲染) | 推送扫描进度更新                           |
 
 ### 2.14 跨平台与打包
 
 **打包配置**（`electron-builder.yml`）
 
-| 平台 | 格式 | 说明 |
-|------|------|------|
-| Windows | NSIS | 安装包，可选安装路径 |
-| macOS | DMG | 磁盘镜像 |
-| Linux | AppImage / snap / deb | 多格式分发 |
+| 平台    | 格式                  | 说明                 |
+| ------- | --------------------- | -------------------- |
+| Windows | NSIS                  | 安装包，可选安装路径 |
+| macOS   | DMG                   | 磁盘镜像             |
+| Linux   | AppImage / snap / deb | 多格式分发           |
 
 - 应用 ID：`com.photobooth`
 - 已生成 `dist/photobooth-1.0.0-setup.exe`（Windows 安装包）
@@ -383,22 +383,22 @@ preload (ipcRenderer.invoke / ipcRenderer.on)
 
 ## 三、技术栈一览
 
-| 层 | 选型 | 版本 | 用途 |
-|---|---|---|---|
-| 桌面壳 | Electron | 39 | 跨平台桌面应用容器 |
-| 脚手架 | electron-vite | ^7.2.6（Vite 7） | 三段式构建（main / preload / renderer） |
-| 打包 | electron-builder | — | 多平台安装包生成 |
-| UI 框架 | React | ^19.2.1 | 渲染进程 UI |
-| 语言 | TypeScript | 5.9 | 全量类型安全 |
-| 面板布局 | react-resizable-panels | ^4.12.2 | 可拖拽侧边栏 |
-| 图像处理 | sharp | — | 缩略图生成 / 格式转换 |
-| EXIF 解析 | exifr | — | EXIF / GPS 元数据提取 |
-| HEIC 解码 | heic-decode | — | HEIC/HEIF 格式解码 |
-| 数据库 | better-sqlite3 | ^13.0.3 | 同步 SQLite，WAL 模式 |
-| 地图 | react-leaflet + leaflet | 5 / — | 地图渲染 |
-| 地图聚簇 | leaflet.markercluster | — | marker 密集时聚合 |
-| 代码规范 | ESLint 9 + Prettier | — | flat config，TS + React hooks |
-| 调试 | VSCode launch.json | — | 主进程 + 渲染进程联合调试 |
+| 层        | 选型                    | 版本             | 用途                                    |
+| --------- | ----------------------- | ---------------- | --------------------------------------- |
+| 桌面壳    | Electron                | 39               | 跨平台桌面应用容器                      |
+| 脚手架    | electron-vite           | ^7.2.6（Vite 7） | 三段式构建（main / preload / renderer） |
+| 打包      | electron-builder        | —                | 多平台安装包生成                        |
+| UI 框架   | React                   | ^19.2.1          | 渲染进程 UI                             |
+| 语言      | TypeScript              | 5.9              | 全量类型安全                            |
+| 面板布局  | react-resizable-panels  | ^4.12.2          | 可拖拽侧边栏                            |
+| 图像处理  | sharp                   | —                | 缩略图生成 / 格式转换                   |
+| EXIF 解析 | exifr                   | —                | EXIF / GPS 元数据提取                   |
+| HEIC 解码 | heic-decode             | —                | HEIC/HEIF 格式解码                      |
+| 数据库    | better-sqlite3          | ^13.0.3          | 同步 SQLite，WAL 模式                   |
+| 地图      | react-leaflet + leaflet | 5 / —            | 地图渲染                                |
+| 地图聚簇  | leaflet.markercluster   | —                | marker 密集时聚合                       |
+| 代码规范  | ESLint 9 + Prettier     | —                | flat config，TS + React hooks           |
+| 调试      | VSCode launch.json      | —                | 主进程 + 渲染进程联合调试               |
 
 ---
 
@@ -452,12 +452,12 @@ Photobooth/
 
 ## 五、里程碑状态
 
-| 里程碑 | 内容 | 状态 |
-|--------|------|------|
-| M1 | 多文件夹管理 + 网格预览 | ✅ 完成 |
-| M2 | EXIF 详情 + 星级收藏 + 过滤排序 | ✅ 完成 |
-| M3 | 地图视图 + 聚簇 + 底图切换 | ✅ 完成 |
-| M4 | HEIC 缩略图、搜索、增量扫描、打包分发 | ✅ 完成 |
+| 里程碑 | 内容                                  | 状态    |
+| ------ | ------------------------------------- | ------- |
+| M1     | 多文件夹管理 + 网格预览               | ✅ 完成 |
+| M2     | EXIF 详情 + 星级收藏 + 过滤排序       | ✅ 完成 |
+| M3     | 地图视图 + 聚簇 + 底图切换            | ✅ 完成 |
+| M4     | HEIC 缩略图、搜索、增量扫描、打包分发 | ✅ 完成 |
 
 ---
 
@@ -471,17 +471,17 @@ Photobooth/
 
 ## 七、性能优化
 
-| 优化项 | 实现方式 |
-|--------|----------|
-| 增量扫描 | 文件 mtime + size 比对，未变化文件跳过 EXIF / 缩略图处理 |
-| 并发处理 | 4 线程并发池处理扫描队列 |
-| 分页加载 | 每页 120 张，IntersectionObserver 触发加载 |
-| 缩略图缓存 | 512px JPEG，文件路径 SHA-1 命名，缺失自动重建 |
-| 预览缓存 LRU | 大图预览缓存上限 200MB，超限按 mtime 从旧到新删除 |
-| 请求竞态控制 | loadSeq 序号机制，快速切换文件夹时丢弃过期请求 |
-| 搜索防抖 | 输入停止 300ms 后触发查询 |
-| 聚簇分块加载 | markercluster `chunkedLoading: true` |
-| 预览转码去重 | 同一文件并发转码复用同一 Promise |
-| 缓存清理节流 | 最多 30s 检查一次，并发复用同一清理任务 |
+| 优化项       | 实现方式                                                 |
+| ------------ | -------------------------------------------------------- |
+| 增量扫描     | 文件 mtime + size 比对，未变化文件跳过 EXIF / 缩略图处理 |
+| 并发处理     | 4 线程并发池处理扫描队列                                 |
+| 分页加载     | 每页 120 张，IntersectionObserver 触发加载               |
+| 缩略图缓存   | 512px JPEG，文件路径 SHA-1 命名，缺失自动重建            |
+| 预览缓存 LRU | 大图预览缓存上限 200MB，超限按 mtime 从旧到新删除        |
+| 请求竞态控制 | loadSeq 序号机制，快速切换文件夹时丢弃过期请求           |
+| 搜索防抖     | 输入停止 300ms 后触发查询                                |
+| 聚簇分块加载 | markercluster `chunkedLoading: true`                     |
+| 预览转码去重 | 同一文件并发转码复用同一 Promise                         |
+| 缓存清理节流 | 最多 30s 检查一次，并发复用同一清理任务                  |
 
 > AI生成

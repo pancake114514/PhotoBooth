@@ -16,10 +16,8 @@ const api: Api = {
   photos: {
     list: (folderId: number, offset: number, limit: number, opts?) =>
       ipcRenderer.invoke('photos:list', folderId, offset, limit, opts),
-    gpsList: (folderId: number, opts?) =>
-      ipcRenderer.invoke('photos:gpsList', folderId, opts),
-    setRating: (id: number, rating: number) =>
-      ipcRenderer.invoke('photos:setRating', id, rating),
+    gpsList: (folderId: number, opts?) => ipcRenderer.invoke('photos:gpsList', folderId, opts),
+    setRating: (id: number, rating: number) => ipcRenderer.invoke('photos:setRating', id, rating),
     setFavorite: (id: number, favorite: boolean) =>
       ipcRenderer.invoke('photos:setFavorite', id, favorite),
     showContextMenu: (path: string, x: number, y: number) =>

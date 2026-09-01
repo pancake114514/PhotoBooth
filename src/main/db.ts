@@ -95,9 +95,9 @@ export function addFolder(path: string, name: string): Folder {
 
 export function removeFolder(id: number): string[] {
   // 先取出该文件夹全部照片路径（删除记录后用于清理对应缓存文件）
-  const rows = db
-    .prepare('SELECT path FROM photos WHERE folder_id = ?')
-    .all(id) as Array<{ path: string }>
+  const rows = db.prepare('SELECT path FROM photos WHERE folder_id = ?').all(id) as Array<{
+    path: string
+  }>
   db.prepare('DELETE FROM folders WHERE id = ?').run(id)
   return rows.map((r) => r.path)
 }
@@ -115,11 +115,7 @@ function escapeLike(s: string): string {
 }
 
 /** 追加搜索条件（文件名/路径模糊匹配） */
-function pushSearchClause(
-  where: string[],
-  params: Array<string | number>,
-  search?: string
-): void {
+function pushSearchClause(where: string[], params: Array<string | number>, search?: string): void {
   if (!search || !search.trim()) return
   const like = `%${escapeLike(search.trim())}%`
   where.push(`(filename LIKE ? ESCAPE '\\' OR path LIKE ? ESCAPE '\\')`)
@@ -197,9 +193,8 @@ export function countPhotos(folderId: number): number {
 
 /** 通过缩略图缓存文件名反查照片原路径（缓存文件缺失时用于按需重建） */
 export function findPathByThumbPath(thumbPath: string): string | null {
-  const row = db
-    .prepare('SELECT path FROM photos WHERE thumb_path = ? LIMIT 1')
-    .get(thumbPath) as { path: string } | undefined
+  const row = db.prepare('SELECT path FROM photos WHERE thumb_path = ? LIMIT 1').get(thumbPath) as
+    { path: string } | undefined
   return row?.path ?? null
 }
 

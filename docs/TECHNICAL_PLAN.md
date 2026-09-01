@@ -6,15 +6,15 @@
 
 ## 1. 技术栈
 
-| 层 | 选型 | 说明 |
-|---|---|---|
-| 桌面壳 | Electron（electron-vite 脚手架） | 主进程负责文件扫描、缩略图、SQLite、协议、IPC |
-| UI | React + TypeScript | 网格 / 详情面板 / 地图视图 |
-| 图像解码 | 浏览器原生 + sharp（主进程） | 原生支持 JPEG/PNG/WebP/AVIF/GIF；HEIC 由 Chromium 解码（无缩略图时回退原图）；sharp 生成缩略图（libvips） |
-| EXIF | exifr | TS 友好，支持 JPEG/TIFF/HEIC 容器、GPS、异步解析 |
-| 存储 | better-sqlite3 | 同步 API、性能好；原生模块需 electron-rebuild（ABI 匹配 Electron） |
-| 地图 | react-leaflet + leaflet.markercluster | 多底图：高德 / 高德卫星 / OSM / ArcGIS |
-| 安全 | contextIsolation + preload contextBridge | 渲染进程不直接触碰 Node |
+| 层       | 选型                                     | 说明                                                                                                      |
+| -------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 桌面壳   | Electron（electron-vite 脚手架）         | 主进程负责文件扫描、缩略图、SQLite、协议、IPC                                                             |
+| UI       | React + TypeScript                       | 网格 / 详情面板 / 地图视图                                                                                |
+| 图像解码 | 浏览器原生 + sharp（主进程）             | 原生支持 JPEG/PNG/WebP/AVIF/GIF；HEIC 由 Chromium 解码（无缩略图时回退原图）；sharp 生成缩略图（libvips） |
+| EXIF     | exifr                                    | TS 友好，支持 JPEG/TIFF/HEIC 容器、GPS、异步解析                                                          |
+| 存储     | better-sqlite3                           | 同步 API、性能好；原生模块需 electron-rebuild（ABI 匹配 Electron）                                        |
+| 地图     | react-leaflet + leaflet.markercluster    | 多底图：高德 / 高德卫星 / OSM / ArcGIS                                                                    |
+| 安全     | contextIsolation + preload contextBridge | 渲染进程不直接触碰 Node                                                                                   |
 
 ## 2. 项目结构
 

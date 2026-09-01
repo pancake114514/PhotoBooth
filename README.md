@@ -21,13 +21,13 @@
 
 ## 技术栈
 
-| 层 | 选型 |
-|---|---|
-| 桌面壳 | Electron 39（electron-vite） |
-| UI | React 19 + TypeScript（react-resizable-panels 可拖拽面板） |
-| 图像处理 | sharp（缩略图）+ exifr（EXIF/GPS 解析） |
-| 存储 | better-sqlite3（索引库，外置管理，不改动原文件） |
-| 地图 | react-leaflet + leaflet.markercluster + OSM/高德/ArcGIS 瓦片 |
+| 层       | 选型                                                         |
+| -------- | ------------------------------------------------------------ |
+| 桌面壳   | Electron 39（electron-vite）                                 |
+| UI       | React 19 + TypeScript（react-resizable-panels 可拖拽面板）   |
+| 图像处理 | sharp（缩略图）+ exifr（EXIF/GPS 解析）                      |
+| 存储     | better-sqlite3（索引库，外置管理，不改动原文件）             |
+| 地图     | react-leaflet + leaflet.markercluster + OSM/高德/ArcGIS 瓦片 |
 
 ## 快速开始
 

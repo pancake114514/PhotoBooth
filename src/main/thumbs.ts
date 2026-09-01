@@ -77,7 +77,9 @@ function maybeCleanCache(): void {
         }
       }
       if (removed > 0) {
-        console.log(`[cache] 预览缓存超出 ${CACHE_LIMIT / 1024 / 1024}MB 上限，清理 ${Math.round(removed / 1024)}KB 最旧缓存`)
+        console.log(
+          `[cache] 预览缓存超出 ${CACHE_LIMIT / 1024 / 1024}MB 上限，清理 ${Math.round(removed / 1024)}KB 最旧缓存`
+        )
       }
     } finally {
       cleaning = null

@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
-import type {
-  Folder,
-  Photo,
-  PhotoListOptions,
-  ScanProgress,
-  SortBy
-} from '../../shared/types'
+import type { Folder, Photo, PhotoListOptions, ScanProgress, SortBy } from '../../shared/types'
 import Sidebar from './components/Sidebar'
 import PhotoGrid from './components/PhotoGrid'
 import MapView from './components/MapView'
@@ -97,21 +91,18 @@ function App(): React.JSX.Element {
     return () => clearTimeout(id)
   }, [refreshFolders])
 
-  const loadPage = useCallback(
-    async (folderId: number, offset: number, append: boolean) => {
-      const seq = ++loadSeq.current
-      setLoading(true)
-      try {
-        const page = await window.api.photos.list(folderId, offset, PAGE_SIZE, optsRef.current)
-        if (seq !== loadSeq.current) return // 已被更新的请求取代
-        setTotal(page.total)
-        setPhotos((prev) => (append ? [...prev, ...page.photos] : page.photos))
-      } finally {
-        if (seq === loadSeq.current) setLoading(false)
-      }
-    },
-    []
-  )
+  const loadPage = useCallback(async (folderId: number, offset: number, append: boolean) => {
+    const seq = ++loadSeq.current
+    setLoading(true)
+    try {
+      const page = await window.api.photos.list(folderId, offset, PAGE_SIZE, optsRef.current)
+      if (seq !== loadSeq.current) return // 已被更新的请求取代
+      setTotal(page.total)
+      setPhotos((prev) => (append ? [...prev, ...page.photos] : page.photos))
+    } finally {
+      if (seq === loadSeq.current) setLoading(false)
+    }
+  }, [])
 
   const loadGps = useCallback(async (folderId: number) => {
     const res = await window.api.photos.gpsList(folderId, optsRef.current)
@@ -230,7 +221,7 @@ function App(): React.JSX.Element {
 
   const handleSidebarExpand = useCallback((): void => {
     sidebarPanelRef.current?.expand()
-  }, [])
+  }, [sidebarPanelRef])
 
   const activeFolder = folders.find((f) => f.id === activeId) ?? null
   const activeScan = activeId != null ? scanMap[activeId] : undefined
@@ -267,110 +258,107 @@ function App(): React.JSX.Element {
         <Separator className="sidebar-separator" />
         <Panel id="main" minSize={400}>
           <main className="main">
-        <header className="toolbar">
-          <h1>{activeFolder ? activeFolder.name : '照片'}</h1>
-          <div className="toolbar-controls">
-            <div className="view-switch">
-              <button
-                className={view === 'grid' ? 'on' : ''}
-                onClick={() => setView('grid')}
-                title="照片网格"
-              >
-                照片
-              </button>
-              <button
-                className={view === 'map' ? 'on' : ''}
-                onClick={() => setView('map')}
-                title="地图视图"
-              >
-                地图
-              </button>
-            </div>
-            <input
-              className="btn search-input"
-              type="text"
-              placeholder="搜索文件名…"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <select
-              className="btn select"
-              value={filterId}
-              onChange={(e) => {
-                setLightbox(null)
-                setFilterId(e.target.value)
-              }}
-              title="过滤"
-            >
-              {FILTERS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-            <select
-              className="btn select"
-              value={sortBy}
-              disabled={view !== 'grid'}
-              onChange={(e) => {
-                setLightbox(null)
-                setSortBy(e.target.value as SortBy)
-              }}
-              title={view === 'grid' ? '排序' : '排序仅对照片网格生效'}
-            >
-              <option value="taken_desc">最新优先</option>
-              <option value="taken_asc">最旧优先</option>
-              <option value="filename">按文件名</option>
-            </select>
-          </div>
-          <div className="toolbar-info">
-            {scanNotice && <span className="scan-notice">{scanNotice.text}</span>}
-            {isScanning && activeScan && (
-              <span className="scan-status">
-                {activeScan.phase === 'walking'
-                  ? '正在扫描…'
-                  : `扫描中 ${activeScan.done}/${activeScan.total}`}
-              </span>
+            <header className="toolbar">
+              <h1>{activeFolder ? activeFolder.name : '照片'}</h1>
+              <div className="toolbar-controls">
+                <div className="view-switch">
+                  <button
+                    className={view === 'grid' ? 'on' : ''}
+                    onClick={() => setView('grid')}
+                    title="照片网格"
+                  >
+                    照片
+                  </button>
+                  <button
+                    className={view === 'map' ? 'on' : ''}
+                    onClick={() => setView('map')}
+                    title="地图视图"
+                  >
+                    地图
+                  </button>
+                </div>
+                <input
+                  className="btn search-input"
+                  type="text"
+                  placeholder="搜索文件名…"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                />
+                <select
+                  className="btn select"
+                  value={filterId}
+                  onChange={(e) => {
+                    setLightbox(null)
+                    setFilterId(e.target.value)
+                  }}
+                  title="过滤"
+                >
+                  {FILTERS.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="btn select"
+                  value={sortBy}
+                  disabled={view !== 'grid'}
+                  onChange={(e) => {
+                    setLightbox(null)
+                    setSortBy(e.target.value as SortBy)
+                  }}
+                  title={view === 'grid' ? '排序' : '排序仅对照片网格生效'}
+                >
+                  <option value="taken_desc">最新优先</option>
+                  <option value="taken_asc">最旧优先</option>
+                  <option value="filename">按文件名</option>
+                </select>
+              </div>
+              <div className="toolbar-info">
+                {scanNotice && <span className="scan-notice">{scanNotice.text}</span>}
+                {isScanning && activeScan && (
+                  <span className="scan-status">
+                    {activeScan.phase === 'walking'
+                      ? '正在扫描…'
+                      : `扫描中 ${activeScan.done}/${activeScan.total}`}
+                  </span>
+                )}
+                <span>{view === 'map' ? gpsTotal : total} 张</span>
+                {activeFolder && isScanning && (
+                  <button className="btn" onClick={() => handleCancelScan(activeFolder.id)}>
+                    取消扫描
+                  </button>
+                )}
+                {activeFolder && (
+                  <button
+                    className="btn"
+                    disabled={isScanning}
+                    onClick={() => handleRescan(activeFolder.id)}
+                  >
+                    重新扫描
+                  </button>
+                )}
+              </div>
+            </header>
+            {view === 'grid' ? (
+              <PhotoGrid
+                photos={photos}
+                total={total}
+                loading={loading}
+                onLoadMore={loadMore}
+                onOpen={(i) => setLightbox({ source: 'grid', index: i })}
+              />
+            ) : (
+              <MapView
+                photos={gpsPhotos}
+                total={gpsTotal}
+                onOpenPhoto={(p) => {
+                  // 用全部带 GPS 照片作为大图列表，保证左右切换可用
+                  const i = gpsPhotos.findIndex((x) => x.id === p.id)
+                  setLightbox({ source: 'map', index: i >= 0 ? i : 0 })
+                }}
+              />
             )}
-            <span>{view === 'map' ? gpsTotal : total} 张</span>
-            {activeFolder && isScanning && (
-              <button
-                className="btn"
-                onClick={() => handleCancelScan(activeFolder.id)}
-              >
-                取消扫描
-              </button>
-            )}
-            {activeFolder && (
-              <button
-                className="btn"
-                disabled={isScanning}
-                onClick={() => handleRescan(activeFolder.id)}
-              >
-                重新扫描
-              </button>
-            )}
-          </div>
-        </header>
-        {view === 'grid' ? (
-          <PhotoGrid
-            photos={photos}
-            total={total}
-            loading={loading}
-            onLoadMore={loadMore}
-            onOpen={(i) => setLightbox({ source: 'grid', index: i })}
-          />
-        ) : (
-          <MapView
-            photos={gpsPhotos}
-            total={gpsTotal}
-            onOpenPhoto={(p) => {
-              // 用全部带 GPS 照片作为大图列表，保证左右切换可用
-              const i = gpsPhotos.findIndex((x) => x.id === p.id)
-              setLightbox({ source: 'map', index: i >= 0 ? i : 0 })
-            }}
-          />
-        )}
           </main>
         </Panel>
       </Group>
