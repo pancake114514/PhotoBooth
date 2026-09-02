@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            build_cmd: npm run build:win
+            artifact_glob: dist/photobooth-*-setup.exe
+          - os: macos-latest
+            build_cmd: npm run build:mac
+            artifact_glob: dist/photobooth-*.dmg
+          - os: ubuntu-latest
+            build_cmd: npm run build:linux
+            artifact_glob: dist/photobooth-*.AppImage
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # macOS 需要 Xcode 用于签名和构建
+      - name: Setup Xcode
+        if: matrix.os == 'macos-latest'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build & Package
+        run: ${{ matrix.build_cmd }}
+        env:
+          # GitHub Actions 默认有 GH_TOKEN，electron-builder 会用它上传到 Releases
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_glob }}
+          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
