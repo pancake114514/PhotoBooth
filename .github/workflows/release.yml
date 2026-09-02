@@ -19,7 +19,10 @@ jobs:
             artifact_glob: dist/photobooth-*-setup.exe
           - os: macos-latest
             build_cmd: npm run build:mac
-            artifact_glob: dist/photobooth-*.dmg
+            artifact_glob: dist/photobooth-*-x64.dmg
+          - os: macos-latest
+            build_cmd: npm run build:mac -- --arm64
+            artifact_glob: dist/photobooth-*-arm64.dmg
           - os: ubuntu-latest
             build_cmd: npm run build:linux
             artifact_glob: dist/photobooth-*.AppImage
