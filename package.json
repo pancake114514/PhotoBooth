@@ -1,6 +1,6 @@
 {
   "name": "photobooth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "桌面端相册管理工具：图像预览、EXIF、星级收藏与地图定位",
   "main": "./out/main/index.js",
   "author": "example.com",
