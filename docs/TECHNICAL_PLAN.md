@@ -1,3 +1,14 @@
+---
+AIGC:
+  ContentProducer: '001191110102MAD55U9H0F10002'
+  ContentPropagator: '001191110102MAD55U9H0F10002'
+  Label: '1'
+  ProduceID: '6d6c2440-f3cb-41c2-a2b3-63955ecda16a'
+  PropagateID: '6d6c2440-f3cb-41c2-a2b3-63955ecda16a'
+  ReservedCode1: '576d6852-1222-42d3-aa41-42952b351d24'
+  ReservedCode2: '576d6852-1222-42d3-aa41-42952b351d24'
+---
+
 # Photobooth 技术方案
 
 桌面端相册管理工具：主流格式预览、EXIF 读取（位置/设备信息）、星级与收藏、地图显示照片位置（iOS 相册式体验）。
@@ -88,7 +99,7 @@ CREATE INDEX idx_photos_rating ON photos(rating, favorite);
 - **[x] M1** 脚手架 + 多文件夹选择 + 全量扫描 + 网格缩略图预览 ✅
 - **[x] M2** EXIF 详情面板 + 星级/收藏 + 过滤排序 ✅
 - **[x] M3** 地图视图 + 聚簇 + 照片定位 + 多底图 ✅
-- **M4** HEIC 缩略图完善、搜索、性能优化、打包分发（electron-builder）
+- **[x] M4** HEIC 缩略图完善、搜索、性能优化、打包分发（electron-builder）
 
 ## 6. 风险备忘 / 已知边界
 

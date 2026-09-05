@@ -62,25 +62,34 @@ export function closeDb(): void {
 
 // ---------- folders ----------
 
+const FOLDER_SQL = `SELECT f.id, f.path, f.name,
+        (SELECT COUNT(*) FROM photos p WHERE p.folder_id = f.id) AS photoCount
+ FROM folders f`
+
+/** 运行时校验行是否为合法 Folder 对象 */
+function asFolder(row: unknown): Folder | null {
+  if (!row || typeof row !== 'object') return null
+  const r = row as Record<string, unknown>
+  if (typeof r.id !== 'number' || typeof r.path !== 'string' || typeof r.name !== 'string')
+    return null
+  return {
+    id: r.id,
+    path: r.path,
+    name: r.name,
+    photoCount: typeof r.photoCount === 'number' ? r.photoCount : 0
+  }
+}
+
 export function listFolders(): Folder[] {
   return db
-    .prepare(
-      `SELECT f.id, f.path, f.name,
-              (SELECT COUNT(*) FROM photos p WHERE p.folder_id = f.id) AS photoCount
-       FROM folders f ORDER BY f.added_at`
-    )
-    .all() as Folder[]
+    .prepare(`${FOLDER_SQL} ORDER BY f.added_at`)
+    .all()
+    .map(asFolder)
+    .filter((f): f is Folder => f !== null)
 }
 
 export function getFolder(id: number): Folder | null {
-  const row = db
-    .prepare(
-      `SELECT f.id, f.path, f.name,
-              (SELECT COUNT(*) FROM photos p WHERE p.folder_id = f.id) AS photoCount
-       FROM folders f WHERE f.id = ?`
-    )
-    .get(id) as Folder | undefined
-  return row ?? null
+  return asFolder(db.prepare(`${FOLDER_SQL} WHERE f.id = ?`).get(id))
 }
 
 export function addFolder(path: string, name: string): Folder {
@@ -122,12 +131,11 @@ function pushSearchClause(where: string[], params: Array<string | number>, searc
   params.push(like, like)
 }
 
-export function listPhotos(
+/** 构建过滤/搜索 WHERE 子句和参数（listPhotos 和 listGpsPhotos 共用） */
+function buildFilterWhere(
   folderId: number,
-  offset: number,
-  limit: number,
-  opts: PhotoListOptions = {}
-): PhotoPage {
+  opts: PhotoListOptions
+): { whereSql: string; params: Array<string | number> } {
   const where = ['folder_id = ?']
   const params: Array<string | number> = [folderId]
   if (opts.filter === 'favorite') {
@@ -137,18 +145,41 @@ export function listPhotos(
     params.push(opts.minRating ?? 1)
   }
   pushSearchClause(where, params, opts.search)
+  return { whereSql: where.join(' AND '), params }
+}
+
+/** 运行时校验行是否为合法 Photo 对象 */
+function asPhoto(row: unknown): Photo | null {
+  if (!row || typeof row !== 'object') return null
+  const r = row as Record<string, unknown>
+  if (typeof r.id !== 'number' || typeof r.path !== 'string') return null
+  return row as Photo
+}
+
+function asPhotos(rows: unknown[]): Photo[] {
+  return rows.map(asPhoto).filter((p): p is Photo => p !== null)
+}
+
+export function listPhotos(
+  folderId: number,
+  offset: number,
+  limit: number,
+  opts: PhotoListOptions = {}
+): PhotoPage {
+  const { whereSql, params } = buildFilterWhere(folderId, opts)
   const orderMap: Record<SortBy, string> = {
     taken_desc: 'taken_at DESC, id DESC',
     taken_asc: 'taken_at ASC, id ASC',
     filename: 'filename COLLATE NOCASE ASC, id ASC'
   }
   const orderBy = orderMap[opts.sortBy ?? 'taken_desc']
-  const whereSql = where.join(' AND ')
-  const photos = db
-    .prepare(
-      `SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`
-    )
-    .all(...params, limit, offset) as Photo[]
+  const photos = asPhotos(
+    db
+      .prepare(
+        `SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${whereSql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`
+      )
+      .all(...params, limit, offset)
+  )
   const { total } = db
     .prepare(`SELECT COUNT(*) AS total FROM photos WHERE ${whereSql}`)
     .get(...params) as { total: number }
@@ -166,28 +197,20 @@ export function updateFavorite(id: number, favorite: boolean): void {
 
 /** 地图视图：返回带 GPS 的照片（尊重过滤条件）+ 满足过滤条件的照片总数（用于统计无 GPS 数量） */
 export function listGpsPhotos(folderId: number, opts: PhotoListOptions = {}): GpsPhotoList {
-  // 构建过滤/搜索条件（不含 GPS 过滤），total 与 photos 共用此条件
-  const filterWhere = ['folder_id = ?']
-  const params: Array<string | number> = [folderId]
-  if (opts.filter === 'favorite') {
-    filterWhere.push('favorite = 1')
-  } else if (opts.filter === 'rated') {
-    filterWhere.push('rating >= ?')
-    params.push(opts.minRating ?? 1)
-  }
-  pushSearchClause(filterWhere, params, opts.search)
-  const filterSql = filterWhere.join(' AND ')
+  const { whereSql, params } = buildFilterWhere(folderId, opts)
 
   // photos：在过滤条件基础上再要求 GPS 非空
-  const photos = db
-    .prepare(
-      `SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${filterSql} AND gps_lat IS NOT NULL AND gps_lng IS NOT NULL`
-    )
-    .all(...params) as Photo[]
+  const photos = asPhotos(
+    db
+      .prepare(
+        `SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${whereSql} AND gps_lat IS NOT NULL AND gps_lng IS NOT NULL`
+      )
+      .all(...params)
+  )
 
   // total：满足过滤条件的照片总数（不含 GPS 过滤），total - photos.length = 无 GPS 的照片数量
   const { total } = db
-    .prepare(`SELECT COUNT(*) AS total FROM photos WHERE ${filterSql}`)
+    .prepare(`SELECT COUNT(*) AS total FROM photos WHERE ${whereSql}`)
     .get(...params) as { total: number }
   return { photos, total }
 }

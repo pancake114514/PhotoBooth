@@ -164,14 +164,20 @@ export function generateThumb(filePath: string): Promise<ThumbResult> {
   return task
 }
 
+/** 生成缩略图 sharp 通用配置（常规格式和 HEIC 共用） */
+function resizeThumb(img: ReturnType<typeof sharp>, thumbPath: string): Promise<void> {
+  return img
+    .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 82 })
+    .toFile(join(thumbsDir, thumbPath))
+    .then(() => undefined)
+}
+
 /** 常规格式缩略图生成（sharp 直接处理） */
 async function generateThumbStandard(filePath: string, thumbPath: string): Promise<ThumbResult> {
   const img = sharp(filePath, { failOn: 'none', limitInputPixels: 268_435_456 }).rotate()
   const meta = await img.metadata()
-  await img
-    .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 82 })
-    .toFile(join(thumbsDir, thumbPath))
+  await resizeThumb(img, thumbPath)
   maybeCleanCache()
   return { thumbPath, width: meta.width ?? null, height: meta.height ?? null }
 }
@@ -180,12 +186,12 @@ async function generateThumbHeic(filePath: string, thumbPath: string): Promise<T
   try {
     const buffer = await readFile(filePath)
     const decoded = await heicDecode({ buffer })
-    await sharp(decoded.data, {
-      raw: { width: decoded.width, height: decoded.height, channels: 4 }
-    })
-      .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 82 })
-      .toFile(join(thumbsDir, thumbPath))
+    await resizeThumb(
+      sharp(decoded.data, {
+        raw: { width: decoded.width, height: decoded.height, channels: 4 }
+      }),
+      thumbPath
+    )
     maybeCleanCache()
     return { thumbPath, width: decoded.width, height: decoded.height }
   } catch (e) {

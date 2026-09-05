@@ -32,7 +32,10 @@ function sendProgress(p: ScanProgress): void {
   }
 }
 
-async function walk(dir: string, out: string[]): Promise<void> {
+/** 递归遍历目录，收集所有图像文件路径。最大深度 30 防止极端嵌套。 */
+const MAX_DEPTH = 30
+async function walk(dir: string, out: string[], depth = 0): Promise<void> {
+  if (depth >= MAX_DEPTH) return
   let entries
   try {
     entries = await readdir(dir, { withFileTypes: true })
@@ -43,7 +46,7 @@ async function walk(dir: string, out: string[]): Promise<void> {
     const full = join(dir, e.name)
     if (e.isDirectory()) {
       if (e.name.startsWith('.') || SKIP_DIRS.has(e.name)) continue
-      await walk(full, out)
+      await walk(full, out, depth + 1)
     } else if (e.isFile() && isImage(e.name)) {
       out.push(full)
     }
@@ -144,8 +147,9 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
           })
           scanMark(folderId, filePath)
         }
-      } catch {
-        // 单文件失败（扫描中被移动/删除等）：跳过
+      } catch (e) {
+        // 单文件失败（扫描中被移动/删除等）：跳过，输出警告日志便于调试
+        console.warn(`[scanner] 跳过文件 ${filePath}:`, e)
       }
       done++
       if (done % 5 === 0 || done === total) {

@@ -25,6 +25,30 @@ const FILTERS: FilterOption[] = [
 
 type View = 'grid' | 'map'
 
+// localStorage 持久化辅助
+const LS_KEY = 'photobooth-ui-state'
+interface UiState {
+  view?: View
+  filterId?: string
+  sortBy?: SortBy
+  sidebarCollapsed?: boolean
+}
+function loadUiState(): UiState {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as UiState
+  } catch {
+    return {}
+  }
+}
+function saveUiState(patch: UiState): void {
+  try {
+    const cur = loadUiState()
+    localStorage.setItem(LS_KEY, JSON.stringify({ ...cur, ...patch }))
+  } catch {
+    // localStorage 不可用时忽略
+  }
+}
+
 interface LightboxState {
   /** 大图的数据来源：网格已加载分页 / 地图全部 GPS 照片 */
   source: 'grid' | 'map'
@@ -32,9 +56,10 @@ interface LightboxState {
 }
 
 function App(): React.JSX.Element {
+  const saved = loadUiState()
   const [folders, setFolders] = useState<Folder[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [view, setView] = useState<View>('grid')
+  const [view, setView] = useState<View>(saved.view ?? 'grid')
   const [photos, setPhotos] = useState<Photo[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -42,20 +67,46 @@ function App(): React.JSX.Element {
   const [gpsTotal, setGpsTotal] = useState(0)
   const [scanMap, setScanMap] = useState<Record<number, ScanProgress>>({})
   const [lightbox, setLightbox] = useState<LightboxState | null>(null)
-  const [filterId, setFilterId] = useState('all')
-  const [sortBy, setSortBy] = useState<SortBy>('taken_desc')
+  const [filterId, setFilterId] = useState(saved.filterId ?? 'all')
+  const [sortBy, setSortBy] = useState<SortBy>(saved.sortBy ?? 'taken_desc')
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(saved.sidebarCollapsed ?? false)
   const sidebarPanelRef = usePanelRef()
   const [scanNotice, setScanNotice] = useState<{ id: number; text: string } | null>(null)
 
   // 通用临时通知（3 秒自动消失），复用 scanNotice 状态展示
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const showNotice = useCallback((text: string): void => {
     const id = Date.now()
     setScanNotice({ id, text })
-    setTimeout(() => setScanNotice((cur) => (cur?.id === id ? null : cur)), 3000)
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
+    noticeTimerRef.current = setTimeout(
+      () => setScanNotice((cur) => (cur?.id === id ? null : cur)),
+      3000
+    )
   }, [])
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
+    }
+  }, [])
+
+  // 状态持久化：view / filterId / sortBy / sidebarCollapsed 变更时保存
+  useEffect(() => {
+    saveUiState({ view })
+  }, [view])
+  useEffect(() => {
+    saveUiState({ filterId })
+  }, [filterId])
+  useEffect(() => {
+    saveUiState({ sortBy })
+  }, [sortBy])
+  useEffect(() => {
+    saveUiState({ sidebarCollapsed })
+  }, [sidebarCollapsed])
 
   // 搜索防抖：停止输入 300ms 后生效
   useEffect(() => {

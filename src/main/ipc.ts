@@ -5,6 +5,33 @@ import * as db from './db'
 import { scanFolder, cancelScan } from './scanner'
 import { removeCacheFiles } from './thumbs'
 import { IMAGE_EXTS } from './scanner'
+import type { PhotoListOptions } from '../shared/types'
+
+/** 校验 IPC 发送方来源，防止非应用页面的调用 */
+function assertSender(e: Electron.IpcMainInvokeEvent): void {
+  const url = e.senderFrame?.url
+  if (!url) return
+  try {
+    const u = new URL(url)
+    // 允许 file:// （生产）和 localhost （开发服务器）
+    if (u.protocol === 'file:' || u.hostname === 'localhost' || u.hostname === '127.0.0.1') return
+  } catch {
+    // 非法 URL：阻止
+  }
+  throw new Error('Unauthorized IPC sender')
+}
+
+/** 安全包装：校验发送方后执行 handler */
+function safeHandle(
+  channel: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handler: (e: Electron.IpcMainInvokeEvent, ...args: any[]) => unknown
+): void {
+  ipcMain.handle(channel, async (e, ...args) => {
+    assertSender(e)
+    return handler(e, ...args)
+  })
+}
 
 /**
  * 读取图片并应用 EXIF 方向，产出可写入剪贴板的 nativeImage。
@@ -30,9 +57,9 @@ async function createOrientedImage(path: string): Promise<NativeImage | null> {
 }
 
 export function registerIpc(): void {
-  ipcMain.handle('folders:list', () => db.listFolders())
+  safeHandle('folders:list', () => db.listFolders())
 
-  ipcMain.handle('folders:add', async () => {
+  safeHandle('folders:add', async () => {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const res = await dialog.showOpenDialog(win, {
       title: '选择照片文件夹',
@@ -45,7 +72,7 @@ export function registerIpc(): void {
     return folder
   })
 
-  ipcMain.handle('folders:remove', async (_e, id: number) => {
+  safeHandle('folders:remove', async (_e, id: number) => {
     const folder = db.getFolder(id)
     if (!folder) return
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
@@ -63,16 +90,16 @@ export function registerIpc(): void {
     if (removed.length > 0) removeCacheFiles(removed)
   })
 
-  ipcMain.handle('folders:rescan', (_e, id: number) => {
+  safeHandle('folders:rescan', (_e, id: number) => {
     const folder = db.getFolder(id)
     if (folder) void scanFolder(folder.id, folder.path)
   })
 
-  ipcMain.handle('folders:cancelScan', (_e, id: number) => {
+  safeHandle('folders:cancelScan', (_e, id: number) => {
     cancelScan(id)
   })
 
-  ipcMain.handle('folders:context-menu', (e, path: string, x: number, y: number) => {
+  safeHandle('folders:context-menu', (e, path: string, x: number, y: number) => {
     const menu = Menu.buildFromTemplate([
       {
         label: '在资源管理器中打开',
@@ -90,21 +117,25 @@ export function registerIpc(): void {
     })
   })
 
-  ipcMain.handle('photos:list', (_e, folderId: number, offset: number, limit: number, opts) =>
-    db.listPhotos(folderId, offset, limit, opts)
+  safeHandle(
+    'photos:list',
+    (_e, folderId: number, offset: number, limit: number, opts: PhotoListOptions = {}) =>
+      db.listPhotos(folderId, offset, limit, opts)
   )
 
-  ipcMain.handle('photos:gpsList', (_e, folderId: number, opts) => db.listGpsPhotos(folderId, opts))
+  safeHandle('photos:gpsList', (_e, folderId: number, opts: PhotoListOptions = {}) =>
+    db.listGpsPhotos(folderId, opts)
+  )
 
-  ipcMain.handle('photos:setRating', (_e, id: number, rating: number) => {
+  safeHandle('photos:setRating', (_e, id: number, rating: number) => {
     db.updateRating(id, rating)
   })
 
-  ipcMain.handle('photos:setFavorite', (_e, id: number, favorite: boolean) => {
+  safeHandle('photos:setFavorite', (_e, id: number, favorite: boolean) => {
     db.updateFavorite(id, favorite)
   })
 
-  ipcMain.handle('photos:context-menu', (e, path: string, x: number, y: number) => {
+  safeHandle('photos:context-menu', (e, path: string, x: number, y: number) => {
     const menu = Menu.buildFromTemplate([
       {
         label: '在资源管理器中打开',
@@ -150,7 +181,7 @@ export function registerIpc(): void {
   })
 
   // 复制图片到系统剪贴板（应用 EXIF 方向）；失败不抛错，返回 ok=false 由渲染层提示
-  ipcMain.handle('clipboard:copyImage', async (_e, path: string) => {
+  safeHandle('clipboard:copyImage', async (_e, path: string) => {
     try {
       const img = await createOrientedImage(path)
       if (!img) {
@@ -165,7 +196,7 @@ export function registerIpc(): void {
   })
 
   // 切换窗口全屏
-  ipcMain.handle('window:toggleFullscreen', async (e) => {
+  safeHandle('window:toggleFullscreen', async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return false
     const newState = !win.isFullScreen()
