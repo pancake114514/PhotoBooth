@@ -171,14 +171,19 @@ function Lightbox({
     }
   }, [photo, showToast])
 
-  // ===== 关闭时退出全屏（await 确保 IPC 完成，避免竞态） =====
+  // ===== 关闭/退出全屏 =====
+  // 全屏模式下：先退出全屏，回到大图预览界面（不关闭）
+  // 非全屏模式：直接关闭大图预览
   const handleClose = useCallback(async (): Promise<void> => {
     if (isFullscreen) {
       try {
-        await window.api.toggleFullscreen()
+        const newState = await window.api.toggleFullscreen()
+        setIsFullscreen(newState)
       } catch {
-        // 全屏退出失败不阻止关闭
+        // 全屏退出失败：仍关闭大图预览
+        onClose()
       }
+      return // 退出全屏但不关闭大图
     }
     onClose()
   }, [isFullscreen, onClose])

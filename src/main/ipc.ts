@@ -4,6 +4,7 @@ import type { NativeImage } from 'electron'
 import * as db from './db'
 import { scanFolder, cancelScan } from './scanner'
 import { removeCacheFiles } from './thumbs'
+import { IMAGE_EXTS } from './scanner'
 
 /**
  * 读取图片并应用 EXIF 方向，产出可写入剪贴板的 nativeImage。
@@ -11,9 +12,8 @@ import { removeCacheFiles } from './thumbs'
  * 转 PNG 后给 nativeImage；sharp 无法解码的格式（如 HEIC）回退到原生读取。
  */
 async function createOrientedImage(path: string): Promise<NativeImage | null> {
-  const isSharpFormat = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.bmp', '.tif', '.tiff'].includes(
-    extname(path).toLowerCase()
-  )
+  const ext = extname(path).toLowerCase()
+  const isSharpFormat = IMAGE_EXTS.has(ext) && ext !== '.heic' && ext !== '.heif'
   try {
     if (isSharpFormat) {
       const sharp = (await import('sharp')).default

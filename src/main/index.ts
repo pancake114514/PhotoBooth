@@ -13,6 +13,12 @@ registerSchemes()
 // 强制使用 TLS 1.2 以绕过握手失败
 app.commandLine.appendSwitch('ssl-version-max', 'tls1.2')
 
+// 单实例锁：第二实例激活已有窗口后退出
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -60,7 +66,14 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    try {
+      const u = new URL(details.url)
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        void shell.openExternal(details.url)
+      }
+    } catch {
+      // 非法 URL：忽略，不打开
+    }
     return { action: 'deny' }
   })
 
@@ -74,6 +87,17 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.photobooth')
+
+  // 第二实例启动时：聚焦已有窗口
+  app.on('second-instance', () => {
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      const win = windows[0]
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    }
+  })
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

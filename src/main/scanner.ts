@@ -1,5 +1,4 @@
 import { basename, extname, join } from 'path'
-import { existsSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { BrowserWindow } from 'electron'
 import { parseExif } from './exif'
@@ -106,8 +105,15 @@ export async function scanFolder(folderId: number, dir: string): Promise<void> {
         const mtime = Math.floor(st.mtimeMs)
         const prev = existing.get(filePath)
         // 增量跳过：文件未变化 且 缩略图缓存仍存在（缓存被清理后重新生成）
-        const thumbExists =
-          prev != null && prev.thumbPath != null && existsSync(join(getThumbsDir(), prev.thumbPath))
+        let thumbExists = false
+        if (prev != null && prev.thumbPath != null) {
+          try {
+            await stat(join(getThumbsDir(), prev.thumbPath))
+            thumbExists = true
+          } catch {
+            thumbExists = false
+          }
+        }
         if (prev && prev.mtime === mtime && prev.size === st.size && thumbExists) {
           skipped++
           scanMark(folderId, filePath) // 保持记录存在，不重新解析

@@ -37,15 +37,15 @@ AIGC:
 
 ## 技术栈
 
-| 层       | 选型                                                         |
-| -------- | ------------------------------------------------------------ |
-| 桌面壳   | Electron 39（electron-vite）                                 |
-| UI       | React 19 + TypeScript（react-resizable-panels 可拖拽面板）   |
-| 图像处理 | sharp（缩略图）+ exifr（EXIF/GPS 解析）+ heic-decode（HEIC） |
-| 存储     | better-sqlite3（索引库，外置管理，不改动原文件）             |
-| 地图     | react-leaflet + leaflet.markercluster + OSM/高德/ArcGIS 瓦片 |
+| 层       | 选型                                                              |
+| -------- | ----------------------------------------------------------------- |
+| 桌面壳   | Electron 39（electron-vite）                                      |
+| UI       | React 19 + TypeScript（react-resizable-panels 可拖拽面板）        |
+| 图像处理 | sharp（缩略图）+ exifr（EXIF/GPS 解析）+ heic-decode（HEIC）      |
+| 存储     | better-sqlite3（索引库，外置管理，不改动原文件）                  |
+| 地图     | react-leaflet + leaflet.markercluster + OSM/高德/ArcGIS 瓦片      |
 | 构建     | electron-builder（Windows NSIS / macOS DMG / Linux AppImage+deb） |
-| CI/CD    | GitHub Actions（自动类型检查 + 多平台打包发布）              |
+| CI/CD    | GitHub Actions（自动类型检查 + 多平台打包发布）                   |
 
 ## 快速开始
 
@@ -95,11 +95,11 @@ docs/
 
 ## 打包分发
 
-| 平台    | 格式               | 架构         |
-| ------- | ------------------ | ------------ |
-| Windows | NSIS 安装包        | x64          |
-| macOS   | DMG 磁盘镜像       | x64 + arm64  |
-| Linux   | AppImage + deb     | x64          |
+| 平台    | 格式           | 架构        |
+| ------- | -------------- | ----------- |
+| Windows | NSIS 安装包    | x64         |
+| macOS   | DMG 磁盘镜像   | x64 + arm64 |
+| Linux   | AppImage + deb | x64         |
 
 - GitHub Actions 在推送 tag 时自动构建多平台安装包并发布到 GitHub Releases
 - macOS 支持 Apple Silicon（arm64）原生打包
