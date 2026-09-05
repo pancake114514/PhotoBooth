@@ -81,16 +81,19 @@ function toDate(v: unknown): number | null {
 const EXIF_TIMEOUT = 15_000
 
 export async function parseExif(filePath: string): Promise<ParsedExif> {
+  let timer: ReturnType<typeof setTimeout>
   try {
     const result = await Promise.race([
       parseExifInternal(filePath),
-      new Promise<ParsedExif>((_, reject) =>
-        setTimeout(() => reject(new Error('EXIF parse timeout')), EXIF_TIMEOUT)
-      )
+      new Promise<ParsedExif>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('EXIF parse timeout')), EXIF_TIMEOUT)
+      })
     ])
     return result
   } catch {
     return { ...EMPTY }
+  } finally {
+    clearTimeout(timer!)
   }
 }
 

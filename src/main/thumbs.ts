@@ -128,27 +128,40 @@ const THUMB_SIZE = 512
 /** 单张缩略图生成超时毫秒数：sharp 对损坏/极大文件可能挂起，超时后返回 null */
 const THUMB_TIMEOUT = 30_000
 
-/** 带超时的 Promise 包装 */
+/** 带超时的 Promise 包装（超时定时器在 resolve/reject 后自动清除，避免泄漏） */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
-  ])
+  let timer: ReturnType<typeof setTimeout>
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Timeout')), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer!))
 }
 
+/** 进行中的缩略图生成任务（防止同一文件并发重复生成，如多个 <img> 同时请求缺失缓存） */
+const thumbTasks = new Map<string, Promise<ThumbResult>>()
+
 /** 生成 JPEG 缩略图；失败（格式不支持、超时等）时返回 null，由前端回退到原图加载 */
-export async function generateThumb(filePath: string): Promise<ThumbResult> {
+export function generateThumb(filePath: string): Promise<ThumbResult> {
   const thumbPath = thumbFileName(filePath)
-  try {
-    const ext = extname(filePath).toLowerCase()
-    // HEIC/HEIF：sharp（libvips）不带 libheif，用 libheif wasm 解码后交给 sharp 压缩
-    if (ext === '.heic' || ext === '.heif') {
-      return await withTimeout(generateThumbHeic(filePath, thumbPath), THUMB_TIMEOUT)
+  const running = thumbTasks.get(thumbPath)
+  if (running) return running
+
+  const task = (async (): Promise<ThumbResult> => {
+    try {
+      const ext = extname(filePath).toLowerCase()
+      // HEIC/HEIF：sharp（libvips）不带 libheif，用 libheif wasm 解码后交给 sharp 压缩
+      if (ext === '.heic' || ext === '.heif') {
+        return await withTimeout(generateThumbHeic(filePath, thumbPath), THUMB_TIMEOUT)
+      }
+      return await withTimeout(generateThumbStandard(filePath, thumbPath), THUMB_TIMEOUT)
+    } catch {
+      return { thumbPath: null, width: null, height: null }
+    } finally {
+      thumbTasks.delete(thumbPath)
     }
-    return await withTimeout(generateThumbStandard(filePath, thumbPath), THUMB_TIMEOUT)
-  } catch {
-    return { thumbPath: null, width: null, height: null }
-  }
+  })()
+  thumbTasks.set(thumbPath, task)
+  return task
 }
 
 /** 常规格式缩略图生成（sharp 直接处理） */

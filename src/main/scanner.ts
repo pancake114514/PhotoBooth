@@ -7,7 +7,7 @@ import { generateThumb, getThumbsDir, removeCacheFiles } from './thumbs'
 import { getExistingRecords, scanBegin, scanEnd, scanMark, upsertPhoto } from './db'
 import type { ScanProgress } from '../shared/types'
 
-const IMAGE_EXTS = new Set([
+export const IMAGE_EXTS = new Set([
   '.jpg',
   '.jpeg',
   '.png',

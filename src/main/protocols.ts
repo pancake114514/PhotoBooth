@@ -4,6 +4,7 @@ import { pathToFileURL } from 'url'
 import { existsSync } from 'fs'
 import { findPathByThumbPath } from './db'
 import { generateThumb, getPreviewPath } from './thumbs'
+import { IMAGE_EXTS } from './scanner'
 
 /** 必须在 app ready 之前调用 */
 export function registerSchemes(): void {
@@ -41,6 +42,10 @@ export function registerProtocols(): void {
     }
     // Chromium 的 <img> 无法解码 HEIC/HEIF，先转成 JPEG 预览；其余格式直接加载原图
     const ext = extname(p).toLowerCase()
+    // 安全：仅允许受支持的图像格式通过 photo:// 访问，防止读取任意文件
+    if (!IMAGE_EXTS.has(ext)) {
+      return new Response('Forbidden', { status: 403 })
+    }
     if (ext === '.heic' || ext === '.heif') {
       const preview = await getPreviewPath(p)
       if (preview) return net.fetch(pathToFileURL(preview).toString())

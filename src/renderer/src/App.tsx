@@ -50,6 +50,13 @@ function App(): React.JSX.Element {
   const sidebarPanelRef = usePanelRef()
   const [scanNotice, setScanNotice] = useState<{ id: number; text: string } | null>(null)
 
+  // 通用临时通知（3 秒自动消失），复用 scanNotice 状态展示
+  const showNotice = useCallback((text: string): void => {
+    const id = Date.now()
+    setScanNotice({ id, text })
+    setTimeout(() => setScanNotice((cur) => (cur?.id === id ? null : cur)), 3000)
+  }, [])
+
   // 搜索防抖：停止输入 300ms 后生效
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300)
@@ -132,9 +139,7 @@ function App(): React.JSX.Element {
       if (p.phase === 'done' || p.phase === 'error') {
         // 扫描完成提示（含增量跳过信息），3 秒后自动消失
         if (p.phase === 'done' && p.message) {
-          const id = Date.now()
-          setScanNotice({ id, text: p.message })
-          setTimeout(() => setScanNotice((cur) => (cur?.id === id ? null : cur)), 3000)
+          showNotice(p.message)
         }
         void refreshFolders() // 更新文件夹照片计数
         if (p.folderId === activeIdRef.current) {
@@ -149,7 +154,7 @@ function App(): React.JSX.Element {
       }
     })
     return off
-  }, [refreshFolders, loadPage, loadGps])
+  }, [refreshFolders, loadPage, loadGps, showNotice])
 
   const loadMore = useCallback(() => {
     if (loading || activeId == null) return
@@ -189,13 +194,21 @@ function App(): React.JSX.Element {
   )
 
   const handleSetRating = (photo: Photo, rating: number): void => {
+    const prevRating = photo.rating
     applyMeta(photo, { rating })
-    void window.api.photos.setRating(photo.id, rating)
+    window.api.photos.setRating(photo.id, rating).catch(() => {
+      applyMeta(photo, { rating: prevRating })
+      showNotice('评分保存失败，已回滚')
+    })
   }
 
   const handleSetFavorite = (photo: Photo, favorite: boolean): void => {
+    const prevFavorite = photo.favorite
     applyMeta(photo, { favorite: favorite ? 1 : 0 })
-    void window.api.photos.setFavorite(photo.id, favorite)
+    window.api.photos.setFavorite(photo.id, favorite).catch(() => {
+      applyMeta(photo, { favorite: prevFavorite })
+      showNotice('收藏状态保存失败，已回滚')
+    })
   }
 
   const handleAdd = async (): Promise<void> => {

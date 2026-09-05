@@ -171,6 +171,18 @@ function Lightbox({
     }
   }, [photo, showToast])
 
+  // ===== 关闭时退出全屏（await 确保 IPC 完成，避免竞态） =====
+  const handleClose = useCallback(async (): Promise<void> => {
+    if (isFullscreen) {
+      try {
+        await window.api.toggleFullscreen()
+      } catch {
+        // 全屏退出失败不阻止关闭
+      }
+    }
+    onClose()
+  }, [isFullscreen, onClose])
+
   // ===== 键盘事件 =====
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -182,7 +194,7 @@ function Lightbox({
 
       switch (e.key) {
         case 'Escape':
-          onClose()
+          void handleClose()
           break
         case 'ArrowLeft':
           prev()
@@ -240,7 +252,7 @@ function Lightbox({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [
-    onClose,
+    handleClose,
     prev,
     next,
     goFirst,
@@ -290,14 +302,6 @@ function Lightbox({
     window.addEventListener('wheel', onWheel, { passive: false })
     return () => window.removeEventListener('wheel', onWheel)
   }, [next, prev])
-
-  // ===== 关闭时退出全屏 =====
-  const handleClose = useCallback((): void => {
-    if (isFullscreen) {
-      void window.api.toggleFullscreen()
-    }
-    onClose()
-  }, [isFullscreen, onClose])
 
   // 1:1 模式下检测图片是否溢出舞台（溢出时可拖动平移）
   useLayoutEffect(() => {

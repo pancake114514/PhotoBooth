@@ -164,23 +164,31 @@ export function updateFavorite(id: number, favorite: boolean): void {
   db.prepare('UPDATE photos SET favorite = ? WHERE id = ?').run(favorite ? 1 : 0, id)
 }
 
-/** 地图视图：返回带 GPS 的照片（尊重过滤条件）+ 文件夹照片总数（用于统计无 GPS 数量） */
+/** 地图视图：返回带 GPS 的照片（尊重过滤条件）+ 满足过滤条件的照片总数（用于统计无 GPS 数量） */
 export function listGpsPhotos(folderId: number, opts: PhotoListOptions = {}): GpsPhotoList {
-  const where = ['folder_id = ?', 'gps_lat IS NOT NULL', 'gps_lng IS NOT NULL']
+  // 构建过滤/搜索条件（不含 GPS 过滤），total 与 photos 共用此条件
+  const filterWhere = ['folder_id = ?']
   const params: Array<string | number> = [folderId]
   if (opts.filter === 'favorite') {
-    where.push('favorite = 1')
+    filterWhere.push('favorite = 1')
   } else if (opts.filter === 'rated') {
-    where.push('rating >= ?')
+    filterWhere.push('rating >= ?')
     params.push(opts.minRating ?? 1)
   }
-  pushSearchClause(where, params, opts.search)
+  pushSearchClause(filterWhere, params, opts.search)
+  const filterSql = filterWhere.join(' AND ')
+
+  // photos：在过滤条件基础上再要求 GPS 非空
   const photos = db
-    .prepare(`SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${where.join(' AND ')}`)
+    .prepare(
+      `SELECT ${PHOTO_COLUMNS} FROM photos WHERE ${filterSql} AND gps_lat IS NOT NULL AND gps_lng IS NOT NULL`
+    )
     .all(...params) as Photo[]
+
+  // total：满足过滤条件的照片总数（不含 GPS 过滤），total - photos.length = 无 GPS 的照片数量
   const { total } = db
-    .prepare('SELECT COUNT(*) AS total FROM photos WHERE folder_id = ?')
-    .get(folderId) as { total: number }
+    .prepare(`SELECT COUNT(*) AS total FROM photos WHERE ${filterSql}`)
+    .get(...params) as { total: number }
   return { photos, total }
 }
 
