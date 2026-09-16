@@ -1,13 +1,3 @@
----
-AIGC:
-  ContentProducer: '001191110102MAD55U9H0F10002'
-  ContentPropagator: '001191110102MAD55U9H0F10002'
-  Label: '1'
-  ProduceID: 'fb742be9-1b53-4445-97e2-7503cdc841f6'
-  PropagateID: 'fb742be9-1b53-4445-97e2-7503cdc841f6'
-  ReservedCode1: '936ad6be-9378-45c8-9133-de69250f0530'
-  ReservedCode2: '936ad6be-9378-45c8-9133-de69250f0530'
----
 
 # Photobooth
 
